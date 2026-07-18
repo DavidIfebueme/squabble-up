@@ -57,6 +57,11 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid credentials')
     }
+
+    if (user.auth_provider !== 'email') {
+      throw new UnauthorizedException('Use social login for this account')
+    }
+
     return this.generateTokenResponse(user)
   }
 
