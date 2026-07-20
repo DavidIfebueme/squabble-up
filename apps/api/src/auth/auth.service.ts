@@ -47,7 +47,11 @@ export class AuthService {
       { uid: user.id, purpose: 'email_verification' },
       { expiresIn: '24h' },
     )
-    await this.emailService.sendVerificationEmail(email, verifyToken)
+    try {
+      await this.emailService.sendVerificationEmail(email, verifyToken)
+    } catch {
+      // email failure is non-blocking — user is still registered
+    }
 
     return { user: this.sanitizeUser(user) }
   }
@@ -144,14 +148,14 @@ export class AuthService {
     return { verified: true }
   }
 
-  private generateTokenResponse(user: User) {
+  private async generateTokenResponse(user: User) {
     const payload = { sub: user.id, email: user.email }
 
     const access_token = this.jwtService.sign(payload, { expiresIn: '15m' })
     const refresh_token = this.jwtService.sign(payload, { expiresIn: '30d' })
 
-    this.redisService.set(`refresh_token:${refresh_token}`, user.id, 30 * 24 * 60 * 60)
-    this.redisService.set(`user_refresh:${user.id}`, refresh_token, 30 * 24 * 60 * 60)
+    await this.redisService.set(`refresh_token:${refresh_token}`, user.id, 30 * 24 * 60 * 60)
+    await this.redisService.set(`user_refresh:${user.id}`, refresh_token, 30 * 24 * 60 * 60)
 
     return {
       access_token,
