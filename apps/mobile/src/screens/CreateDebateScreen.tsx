@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native'
 import type { Topic } from '@squabble-up/shared'
 import { getTopics } from '../lib/topics'
+import { createDebate } from '../lib/debates'
 
 const COLORS = {
   bgPrimary: '#1E1E1E',
@@ -18,12 +19,28 @@ export default function CreateDebateScreen({ navigation }: any) {
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
   const [query, setQuery] = useState('')
   const [topics, setTopics] = useState<Topic[]>([])
+  const [creating, setCreating] = useState(false)
 
   useEffect(() => {
     getTopics({ limit: 20 }).then(result => {
       if (result.success && result.data) setTopics(result.data)
     })
   }, [])
+
+  const handleCreate = async () => {
+    if (!selectedTopic || creating) return
+    setCreating(true)
+    try {
+      const result = await createDebate({ topic_id: selectedTopic.id })
+      if (result.success) {
+        navigation.replace('DebateLobby', { debateId: result.data.debate.id })
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to create debate. Try again.')
+    } finally {
+      setCreating(false)
+    }
+  }
 
   const filtered = query
     ? topics.filter(t => t.title.toLowerCase().includes(query.toLowerCase()))
@@ -75,10 +92,11 @@ export default function CreateDebateScreen({ navigation }: any) {
         <View style={styles.bottomBar}>
           <Text style={styles.selectedLabel}>Selected: {selectedTopic.title}</Text>
           <TouchableOpacity
-            style={styles.startButton}
-            onPress={() => navigation.goBack()}
+            style={[styles.startButton, creating && styles.startButtonDisabled]}
+            onPress={handleCreate}
+            disabled={creating}
           >
-            <Text style={styles.startButtonText}>Start Debate</Text>
+            <Text style={styles.startButtonText}>{creating ? 'Creating...' : 'Start Debate'}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -104,5 +122,6 @@ const styles = StyleSheet.create({
   bottomBar: { padding: 16, borderTopWidth: 1, borderTopColor: COLORS.borderSubtle },
   selectedLabel: { color: COLORS.textSecondary, fontSize: 14, marginBottom: 12 },
   startButton: { backgroundColor: COLORS.accentAmber, padding: 16, borderRadius: 12, alignItems: 'center', height: 48, justifyContent: 'center' },
+  startButtonDisabled: { opacity: 0.5 },
   startButtonText: { color: COLORS.bgPrimary, fontWeight: '700', fontSize: 16 },
 })
