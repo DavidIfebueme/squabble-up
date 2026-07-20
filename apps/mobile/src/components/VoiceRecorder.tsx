@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native'
-import Voice from '@react-native-voice/voice'
+import { ExpoSpeechRecognitionModule, addSpeechRecognitionListener } from 'expo-speech-recognition'
 
 const COLORS = {
   bgPrimary: '#1E1E1E',
@@ -27,21 +27,34 @@ export default function VoiceRecorder({ duration, onComplete, disabled }: Props)
   const pulseAnim = useRef(new Animated.Value(1)).current
   const onAirOpacity = useRef(new Animated.Value(0.7)).current
   const accumulatedRef = useRef('')
+  const onCompleteRef = useRef(onComplete)
+  onCompleteRef.current = onComplete
+  const remainingRef = useRef(remaining)
+  remainingRef.current = remaining
+  const durationRef = useRef(duration)
+  durationRef.current = duration
 
   useEffect(() => {
-    Voice.onSpeechStart = () => {}
-    Voice.onSpeechEnd = () => {}
-    Voice.onSpeechResults = (e) => {
-      if (e.value) accumulatedRef.current = e.value[0] || accumulatedRef.current
-    }
-    Voice.onSpeechPartialResults = (e) => {
-      if (e.value) accumulatedRef.current = e.value[0] || accumulatedRef.current
-    }
-    Voice.onSpeechError = () => {
+    const sub1 = addSpeechRecognitionListener('result', (e) => {
+      const transcript = e.results?.[0]?.transcript
+      if (transcript) {
+        if (e.isFinal) {
+          accumulatedRef.current = transcript
+        } else {
+          accumulatedRef.current = transcript || accumulatedRef.current
+        }
+      }
+    })
+    const sub2 = addSpeechRecognitionListener('error', () => {
       setError('Recording stopped. Check your microphone.')
-      handleStopCleanup()
+      setState('idle')
+    })
+
+    return () => {
+      ExpoSpeechRecognitionModule.abort()
+      sub1.remove()
+      sub2.remove()
     }
-    return () => { Voice.destroy().then(() => Voice.removeAllListeners()) }
   }, [])
 
   useEffect(() => {
@@ -87,35 +100,35 @@ export default function VoiceRecorder({ duration, onComplete, disabled }: Props)
     return () => clearTimeout(timer)
   }, [remaining, state])
 
-  const handleStopCleanup = async () => {
+  const handleStop = () => {
     try {
-      await Voice.stop()
-    } catch { /* already stopped */ }
+      ExpoSpeechRecognitionModule.stop()
+    } catch {
+      // Already stopped
+    }
+    const text = accumulatedRef.current
+    setState('submitted')
+    onCompleteRef.current({ transcription: text, duration: durationRef.current - remainingRef.current })
   }
 
-  const handleStart = async () => {
+  const handleStart = () => {
     setError(null)
     try {
-      const available = await Voice.isAvailable()
+      const available = ExpoSpeechRecognitionModule.isRecognitionAvailable()
       if (!available) {
         setError('Speech recognition not available on this device.')
         return
       }
       accumulatedRef.current = ''
-      await Voice.start(Platform.OS === 'android' ? 'en-US' : 'en-US')
+      ExpoSpeechRecognitionModule.start({
+        lang: 'en-US',
+        interimResults: true,
+        requiresOnDeviceRecognition: Platform.OS === 'android',
+      })
       setState('recording')
     } catch (e: any) {
       setError(e?.message || 'Could not start recording. Check microphone permissions.')
     }
-  }
-
-  const handleStop = async () => {
-    try {
-      await Voice.stop()
-      const text = accumulatedRef.current
-      setState('submitted')
-      onComplete({ transcription: text, duration: duration - remaining })
-    } catch { /* silent on intentional stop */ }
   }
 
   const handleRetry = () => {

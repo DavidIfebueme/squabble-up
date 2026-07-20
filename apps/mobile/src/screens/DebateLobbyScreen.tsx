@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Share, Alert } from 'react-native'
 import type { Debate } from '@squabble-up/shared'
 import { getDebate, joinDebate } from '../lib/debates'
@@ -20,11 +20,16 @@ const TIMEOUT_MS = 5 * 60 * 1000
 const COUNTDOWN_SECONDS = 3
 const POLL_INTERVAL_MS = 3000
 
-export default function DebateLobbyScreen({ route, navigation }: any) {
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { RootStackParamList } from './DebateRoundScreen'
+
+type Props = NativeStackScreenProps<RootStackParamList, 'DebateLobby'>
+
+export default function DebateLobbyScreen({ route, navigation }: Props) {
   const { debateId, side: initialSide } = route.params
   const [debate, setDebate] = useState<Debate | null>(null)
   const [topicTitle, setTopicTitle] = useState<string | null>(null)
-  const [side, setSide] = useState<'creator' | 'opponent'>(initialSide ?? 'creator')
+  const [side, setSide] = useState<'creator' | 'opponent'>((initialSide as 'creator' | 'opponent') ?? 'creator')
   const [joined, setJoined] = useState(!!initialSide)
   const [opponentJoined, setOpponentJoined] = useState(false)
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS)
@@ -116,12 +121,12 @@ export default function DebateLobbyScreen({ route, navigation }: any) {
   const handleLeave = () => navigation.goBack()
 
   const sideLabel = side === 'creator' ? 'FOR' : 'AGAINST'
-  const rules = Array.from({ length: DEBATE_ROUNDS }, (_, i) => {
+  const rules = useMemo(() => Array.from({ length: DEBATE_ROUNDS }, (_, i) => {
     const num = i + 1
     const type = ROUND_NUMBER_TO_TYPE[num as keyof typeof ROUND_NUMBER_TO_TYPE]
     const dur = type ? ROUND_DURATIONS[type] : 90
     return { round: num, name: type ? type.charAt(0).toUpperCase() + type.slice(1) : '', duration: dur }
-  })
+  }), [])
 
   return (
     <View style={styles.container}>

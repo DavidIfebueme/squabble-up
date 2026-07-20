@@ -8,6 +8,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
 export type RootStackParamList = {
   DebateRound: { debateId: string; roundNumber: number; side: 'creator' | 'opponent' }
+  DebateLobby: { debateId: string; side?: string }
 }
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DebateRound'>
@@ -20,7 +21,7 @@ const COLORS = {
   textPrimary: '#F5F0E8',
   textSecondary: '#A0998F',
   textMuted: '#6B6560',
-  successGreen: '#4CAF50',
+  successGreen: '#66BB6A',
 }
 
 const ROUND_LABELS: Record<number, { name: string; prompt: string }> = {
@@ -40,43 +41,71 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
   const [opponentId, setOpponentId] = useState<string | null>(null)
 
   useEffect(() => {
-    getDebate(debateId).then(result => {
-      if (result.success) {
-        setOpponentId(side === 'creator' ? result.data.opponent_id : result.data.creator_id)
-      }
-    })
-  }, [debateId, side])
+    let cancelled = false
+    const init = async () => {
+      try {
+        const result = await getDebate(debateId)
+        if (!result.success) {
+          Alert.alert('Error', 'Could not load debate.')
+          navigation.goBack()
+          return
+        }
+        const oppId = side === 'creator' ? result.data.opponent_id : result.data.creator_id
+        if (cancelled) return
+        setOpponentId(oppId)
 
-  useEffect(() => {
-    createRound(debateId, roundNumber).then(result => {
-      if (result.success) {
-        setRoundId(result.data.id)
+        try {
+          const roundResult = await createRound(debateId, roundNumber)
+          if (!cancelled && roundResult.success) {
+            setRoundId(roundResult.data.id)
+          }
+        } catch {
+          if (!cancelled) {
+            Alert.alert('Error', 'Could not start round.')
+            navigation.goBack()
+          }
+        } finally {
+          if (!cancelled) setCreating(false)
+        }
+      } catch {
+        if (!cancelled) {
+          Alert.alert('Error', 'Could not load debate.')
+          navigation.goBack()
+        }
       }
-    }).catch(() => {
-      Alert.alert('Error', 'Could not start round.')
-      navigation.goBack()
-    }).finally(() => setCreating(false))
-  }, [debateId, roundNumber, navigation])
+    }
+    init()
+    return () => { cancelled = true }
+  }, [debateId, roundNumber, side, navigation])
 
   useEffect(() => {
     if (!opponentId) return
     const interval = setInterval(async () => {
-      const result = await getRoundsByDebate(debateId)
-      if (result.success) {
-        const opponentRound = result.data.find(
-          r => r.round_number === roundNumber && r.speaker_id === opponentId
-        )
-        setOpponentStatus(opponentRound ? 'done' : 'waiting')
+      try {
+        const result = await getRoundsByDebate(debateId)
+        if (result.success) {
+          const opponentRound = result.data.find(
+            r => r.round_number === roundNumber && r.speaker_id === opponentId
+          )
+          setOpponentStatus(opponentRound ? 'done' : 'waiting')
+        }
+      } catch {
+        // Network error — keep current status
       }
     }, 3000)
     return () => clearInterval(interval)
   }, [debateId, roundNumber, opponentId])
 
   const handleRecordComplete = useCallback(async ({ transcription, duration: recordedDuration }: { transcription: string; duration: number }) => {
-    if (!roundId) return
+    if (!roundId) {
+      Alert.alert('Error', 'Round not initialized. Please try again.')
+      return
+    }
     try {
       await updateRound(roundId, { duration: recordedDuration, transcription })
-    } catch { /* silent */ }
+    } catch {
+      Alert.alert('Error', 'Failed to save recording. Your audio may not have been saved.')
+    }
   }, [roundId])
 
   const statusDotColor = opponentStatus === 'done' ? COLORS.successGreen

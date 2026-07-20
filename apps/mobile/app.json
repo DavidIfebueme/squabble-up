@@ -13,12 +13,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.squabbleup.mobile",
-      "infoPlist": {
-        "UIBackgroundModes": ["audio"],
-        "NSSpeechRecognitionUsageDescription": "Allow Squabble Up to recognize your speech for transcription",
-        "NSMicrophoneUsageDescription": "Allow Squabble Up to access your microphone for recording"
-      }
+      "bundleIdentifier": "app.squabbleup.mobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -35,10 +30,9 @@
       ]
     },
     "plugins": [
-      "expo-av",
-      ["@react-native-voice/voice", {
-        "speechRecognitionPermission": "Allow Squabble Up to recognize your speech for transcription",
-        "microphonePermission": "Allow Squabble Up to access your microphone for recording"
+      ["expo-speech-recognition", {
+        "microphonePermission": "Allow Squabble Up to access your microphone for recording",
+        "speechRecognitionPermission": "Allow Squabble Up to recognize your speech for transcription"
       }]
     ]
   }
