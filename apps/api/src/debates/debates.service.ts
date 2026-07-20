@@ -5,6 +5,7 @@ import { v4 as uuid } from 'uuid'
 import { Debate } from './debate.entity'
 import { GuestSession } from './guest-session.entity'
 import { TopicsService } from '../topics/topics.service'
+import { RealtimeGateway } from '../realtime/realtime.gateway'
 import { GUEST_SESSION_TTL_HOURS } from '@squabble-up/shared'
 
 const DEBATE_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
@@ -19,6 +20,7 @@ export class DebatesService implements OnModuleInit {
     @InjectRepository(GuestSession)
     private readonly guestSessionRepo: Repository<GuestSession>,
     private readonly topicsService: TopicsService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async onModuleInit() {
@@ -149,6 +151,10 @@ export class DebatesService implements OnModuleInit {
     debate.status = 'completed'
     debate.completed_at = new Date()
     await this.debateRepo.save(debate)
+    this.realtimeGateway.emitDebateEvent(debateId, 'debate-completed', {
+      debate_id: debateId,
+      winner_id: debate.winner_id,
+    })
     return { success: true, data: debate }
   }
 
