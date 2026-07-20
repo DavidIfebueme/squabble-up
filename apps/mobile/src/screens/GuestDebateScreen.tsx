@@ -1,28 +1,70 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useState } from 'react'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native'
+import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
-export default function GuestDebateScreen({ navigation }: any) {
+type Props = NativeStackScreenProps<any, 'GuestDebate'>
+
+const COLORS = {
+  bgPrimary: '#1E1E1E',
+  bgSurface: '#2A2A2A',
+  accentAmber: '#D4953A',
+  textPrimary: '#F5F0E8',
+  textSecondary: '#A0998F',
+  textMuted: '#6B6560',
+  recordRed: '#E53935',
+}
+
+export default function GuestDebateScreen({ navigation }: Props) {
+  const [displayName, setDisplayName] = useState('')
+
+  const handleStart = () => {
+    if (displayName.trim().length < 2) {
+      Alert.alert('Name required', 'Please enter a display name (at least 2 characters).')
+      return
+    }
+    navigation.replace('CreateDebate', { guestName: displayName.trim() })
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Quick Debate</Text>
+      <Text style={styles.header}>Debate without an account</Text>
       <Text style={styles.description}>
-        Jump into a debate without creating an account. You will get scoring but your results will not be saved.
+        Enter a display name and jump in. Scores will be saved for 24 hours.
       </Text>
-      <View style={styles.warning}>
-        <Text style={styles.warningText}>Guest sessions expire after 24 hours</Text>
-      </View>
-      <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-        <Text style={styles.buttonText}>Start Arguing</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Display name"
+        placeholderTextColor={COLORS.textMuted}
+        value={displayName}
+        onChangeText={setDisplayName}
+        maxLength={50}
+        autoCapitalize="words"
+      />
+
+      <TouchableOpacity
+        style={[styles.button, displayName.trim().length < 2 && styles.buttonDisabled]}
+        onPress={handleStart}
+        disabled={displayName.trim().length < 2}
+      >
+        <Text style={styles.buttonText}>Start Debating</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.linkButton} onPress={() => navigation.goBack()}>
+        <Text style={styles.linkText}>Create an account instead</Text>
       </TouchableOpacity>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A', padding: 16, justifyContent: 'center' },
-  header: { fontSize: 28, fontWeight: '800', color: '#F8FAFC', textAlign: 'center', marginBottom: 16 },
-  description: { fontSize: 16, color: '#94A3B8', textAlign: 'center', lineHeight: 24, marginBottom: 24 },
-  warning: { backgroundColor: '#422006', padding: 12, borderRadius: 8, marginBottom: 24 },
-  warningText: { color: '#FBBF24', fontSize: 14, textAlign: 'center' },
-  button: { backgroundColor: '#3B82F6', padding: 16, borderRadius: 12, alignItems: 'center' },
-  buttonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 18 },
+  container: { flex: 1, backgroundColor: COLORS.bgPrimary, padding: 24, justifyContent: 'center' },
+  header: { fontFamily: 'serif', fontSize: 24, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 12 },
+  description: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 32 },
+  input: { backgroundColor: COLORS.bgSurface, color: COLORS.textPrimary, padding: 16, borderRadius: 12, fontSize: 16, marginBottom: 16 },
+  button: { backgroundColor: COLORS.accentAmber, padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 16 },
+  buttonDisabled: { opacity: 0.5 },
+  buttonText: { color: COLORS.bgPrimary, fontWeight: '700', fontSize: 16 },
+  linkButton: { alignItems: 'center', padding: 12 },
+  linkText: { color: COLORS.textSecondary, fontSize: 14 },
 })
