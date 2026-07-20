@@ -215,4 +215,24 @@ export class DebatesService implements OnModuleInit {
       this.pendingTimers.delete(debateId)
     }
   }
+
+  async getScorecard(debateId: string) {
+    const debate = await this.debateRepo.findOneBy({ id: debateId })
+    if (!debate) throw new NotFoundException('Debate not found')
+    if (debate.status !== 'completed') throw new BadRequestException('Debate has not been scored yet')
+
+    const topic = await this.topicsService.findById(debate.topic_id)
+
+    return {
+      success: true,
+      data: {
+        debate_id: debate.id,
+        topic: topic.data,
+        winner_id: debate.winner_id,
+        creator_id: debate.creator_id,
+        opponent_id: debate.opponent_id,
+        completed_at: debate.completed_at,
+      },
+    }
+  }
 }

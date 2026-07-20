@@ -117,4 +117,13 @@ export class DebatesController {
   async score(@Param('id', ParseUUIDPipe) id: string) {
     return this.scoringService.triggerScoring(id)
   }
+
+  @Get(':id/scorecard')
+  @ApiOperation({ summary: 'Get scorecard data for a debate' })
+  @ApiParam({ name: 'id', description: 'Debate UUID' })
+  @ApiResponse({ status: 200, description: 'Scorecard data' })
+  @ApiResponse({ status: 404, description: 'Debate not found' })
+  async scorecard(@Param('id', ParseUUIDPipe) id: string) {
+    return this.debatesService.getScorecard(id)
+  }
 }
