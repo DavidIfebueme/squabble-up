@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common'
 import { TopicsService } from './topics.service'
+import { CreateTopicDto, CreateSubtopicDto } from './dto'
 
 @Controller('topics')
 export class TopicsController {
@@ -10,13 +11,23 @@ export class TopicsController {
     return this.topicsService.findAll(category, +page, +limit)
   }
 
-  @Get(':id')
-  async get(@Param('id') id: string) {
-    return this.topicsService.findById(id)
+  @Get(':slug')
+  async getBySlug(@Param('slug') slug: string) {
+    return this.topicsService.findBySlug(slug)
   }
 
   @Post()
-  async create(@Body() body: { title: string; description: string; category: string }) {
+  async create(@Body() body: CreateTopicDto) {
     return this.topicsService.create(body)
+  }
+
+  @Get(':topicId/subtopics')
+  async listSubtopics(@Param('topicId') topicId: string) {
+    return this.topicsService.findSubtopicsByTopicId(topicId)
+  }
+
+  @Post(':topicId/subtopics')
+  async createSubtopic(@Param('topicId') topicId: string, @Body() body: CreateSubtopicDto) {
+    return this.topicsService.createSubtopic(topicId, body)
   }
 }

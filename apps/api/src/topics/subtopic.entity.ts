@@ -1,27 +1,18 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm'
 
-@Entity('topics')
-export class Topic {
+@Entity('subtopics')
+export class Subtopic {
   @PrimaryGeneratedColumn('uuid')
   id: string
 
   @Column()
-  title: string
+  name: string
 
   @Column({ unique: true })
   slug: string
 
-  @Column({ type: 'text' })
-  description: string
-
   @Column()
-  category: string
-
-  @Column({ nullable: true })
-  created_by: string | null
-
-  @Column({ default: 0 })
-  debate_count: number
+  topic_id: string
 
   @CreateDateColumn()
   created_at: Date
