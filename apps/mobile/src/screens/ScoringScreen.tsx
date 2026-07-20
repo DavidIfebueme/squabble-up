@@ -122,6 +122,18 @@ export default function ScoringScreen({ route, navigation }: Props) {
           ))}
         </View>
 
+        <View style={styles.communitySection}>
+          <Text style={styles.communityTitle}>Community Vote</Text>
+          <View style={styles.splitBar}>
+            <View style={[styles.splitBarFill, { width: '60%', backgroundColor: COLORS.accentAmber }]} />
+            <View style={[styles.splitBarFill, { width: '40%', backgroundColor: COLORS.textMuted }]} />
+          </View>
+          <View style={styles.splitLabels}>
+            <Text style={styles.splitLabel}>FOR: 60%</Text>
+            <Text style={styles.splitLabel}>AGAINST: 40%</Text>
+          </View>
+        </View>
+
         <Text style={styles.footer}>Debate anything. Fairly scored.</Text>
         <Text style={styles.url}>squabbleup.app</Text>
       </ViewShot>
@@ -167,4 +179,10 @@ const styles = StyleSheet.create({
   loadingText: { color: COLORS.textSecondary, marginTop: 16 },
   errorText: { color: COLORS.recordRed, fontSize: 16, marginBottom: 16 },
   backText: { color: COLORS.accentAmber, fontSize: 16 },
+  communitySection: { width: '100%', marginBottom: 24, backgroundColor: COLORS.bgElevated, padding: 16, borderRadius: 12 },
+  communityTitle: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary, marginBottom: 12 },
+  splitBar: { flexDirection: 'row', height: 12, borderRadius: 6, overflow: 'hidden', marginBottom: 8 },
+  splitBarFill: { height: '100%' },
+  splitLabels: { flexDirection: 'row', justifyContent: 'space-between' },
+  splitLabel: { fontSize: 12, color: COLORS.textMuted },
 })
