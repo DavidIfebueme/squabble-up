@@ -10,6 +10,7 @@ import CreateDebateScreen from './src/screens/CreateDebateScreen'
 import ProfileScreen from './src/screens/ProfileScreen'
 import GuestDebateScreen from './src/screens/GuestDebateScreen'
 import ScoringScreen from './src/screens/ScoringScreen'
+import VotingScreen from './src/screens/VotingScreen'
 import AuthScreen from './src/screens/AuthScreen'
 
 const Tab = createBottomTabNavigator()
@@ -19,7 +20,8 @@ type AppStackParamList = RootStackParamList & {
   CreateDebate: undefined
   DebateLobby: { debateId: string; side?: string }
   GuestDebate: undefined
-  Scoring: undefined
+  Scoring: { debateId: string }
+  Voting: { debateId: string }
   Auth: undefined
 }
 
@@ -46,6 +48,7 @@ export default function App() {
         <Stack.Screen name="DebateRound" component={DebateRoundScreen} />
         <Stack.Screen name="GuestDebate" component={GuestDebateScreen} />
         <Stack.Screen name="Scoring" component={ScoringScreen} />
+        <Stack.Screen name="Voting" component={VotingScreen} />
         <Stack.Screen name="Auth" component={AuthScreen} />
       </Stack.Navigator>
     </NavigationContainer>
