@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
+import { MaterialIcons } from '@expo/vector-icons'
 import { ExpoSpeechRecognitionModule, addSpeechRecognitionListener } from 'expo-speech-recognition'
 
 const COLORS = {
@@ -143,8 +145,8 @@ export default function VoiceRecorder({ duration, onComplete, disabled }: Props)
     : state === 'recording' ? COLORS.recordRed
     : COLORS.textPrimary
 
-  const icon = state === 'recording' ? '⏹' : state === 'submitted' ? '✓' : '🎙'
-  const iconStyle = state === 'submitted' ? styles.iconSubmitted : styles.iconDefault
+  const iconName = state === 'recording' ? 'stop' : state === 'submitted' ? 'check' : 'mic'
+  const iconColor = state === 'submitted' ? COLORS.successGreen : COLORS.textPrimary
 
   return (
     <View style={styles.container}>
@@ -155,16 +157,31 @@ export default function VoiceRecorder({ duration, onComplete, disabled }: Props)
         </Animated.View>
       )}
 
-      <Animated.View style={[styles.outerRing, { transform: [{ scale: pulseAnim }] }, state === 'recording' && styles.outerRingRecording, state === 'submitted' && styles.outerRingSubmitted]}>
-        <View style={[styles.recordButton, state === 'recording' && styles.recordingButton]}>
-          <TouchableOpacity
-            onPress={state === 'recording' ? handleStop : handleStart}
-            disabled={state === 'submitted' || disabled}
-            style={styles.buttonTouch}
-          >
-            <Text style={[iconStyle, { fontSize: 36 }]}>{icon}</Text>
-          </TouchableOpacity>
-        </View>
+      <Animated.View style={[{ transform: [{ scale: pulseAnim }] }]}>
+        <LinearGradient
+          colors={
+            state === 'recording'
+              ? ['rgba(229,57,53,0.3)', 'rgba(229,57,53,0.05)']
+              : state === 'submitted'
+                ? ['rgba(102,187,106,0.3)', 'rgba(102,187,106,0.05)']
+                : ['rgba(212,149,58,0.35)', 'rgba(212,149,58,0.05)']
+          }
+          style={[
+            styles.outerRing,
+            state === 'recording' && styles.outerRingRecording,
+            state === 'submitted' && styles.outerRingSubmitted,
+          ]}
+        >
+          <View style={[styles.recordButton, state === 'recording' && styles.recordingButton]}>
+            <TouchableOpacity
+              onPress={state === 'recording' ? handleStop : handleStart}
+              disabled={state === 'submitted' || disabled}
+              style={styles.buttonTouch}
+            >
+              <MaterialIcons name={iconName} size={36} color={iconColor} />
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
       </Animated.View>
 
       {error && (
@@ -191,14 +208,12 @@ const styles = StyleSheet.create({
   onAirBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(229,57,53,0.2)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, gap: 6 },
   onAirDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.recordRed },
   onAirText: { fontSize: 12, fontWeight: '700', color: COLORS.recordRed, letterSpacing: 1 },
-  outerRing: { width: 120, height: 120, borderRadius: 60, borderWidth: 2, borderColor: COLORS.accentAmber, alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
+  outerRing: { width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: COLORS.accentAmber },
   outerRingRecording: { borderColor: COLORS.recordRed },
   outerRingSubmitted: { borderColor: COLORS.successGreen },
   recordButton: { width: 96, height: 96, borderRadius: 48, borderWidth: 3, borderColor: COLORS.accentAmber, backgroundColor: COLORS.bgSurface, alignItems: 'center', justifyContent: 'center' },
   recordingButton: { backgroundColor: COLORS.recordRed, borderWidth: 0 },
   buttonTouch: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
-  iconDefault: { color: COLORS.textPrimary },
-  iconSubmitted: { color: COLORS.successGreen },
   errorContainer: { alignItems: 'center', gap: 8 },
   errorText: { fontSize: 14, color: COLORS.recordRed, textAlign: 'center' },
   retryText: { fontSize: 14, fontWeight: '700', color: COLORS.accentAmber },
