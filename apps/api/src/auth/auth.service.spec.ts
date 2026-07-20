@@ -7,7 +7,7 @@ import { AuthService } from './auth.service'
 import { User } from '../users/user.entity'
 import { EmailService } from '../email/email.service'
 import { RedisService } from '../redis/redis.service'
-import { Repository } from 'typeorm'
+import { Repository, UpdateResult } from 'typeorm'
 
 jest.mock('bcrypt')
 
@@ -325,7 +325,7 @@ describe('AuthService', () => {
   describe('verifyEmail', () => {
     it('marks user as verified with valid token', async () => {
       jwtService.verify.mockReturnValue({ uid: 'user-id-123', purpose: 'email_verification' })
-      userRepo.update.mockResolvedValue({ affected: 1 } as any)
+      userRepo.update.mockResolvedValue({ affected: 1 } as UpdateResult)
 
       const result = await service.verifyEmail('valid-token')
 
@@ -362,7 +362,7 @@ describe('AuthService', () => {
 
     it('is idempotent for already-verified users', async () => {
       jwtService.verify.mockReturnValue({ uid: 'user-id-123', purpose: 'email_verification' })
-      userRepo.update.mockResolvedValue({ affected: 0 } as any)
+      userRepo.update.mockResolvedValue({ affected: 0 } as UpdateResult)
 
       const result = await service.verifyEmail('valid-token')
 

@@ -1,6 +1,11 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, Req, Res } from '@nestjs/common'
-import { Response } from 'express'
+import { Request, Response } from 'express'
 import { AuthService } from './auth.service'
+
+interface CookieRequest extends Request {
+  cookies: Record<string, string>
+  user?: { id: string }
+}
 
 @Controller('auth')
 export class AuthController {
@@ -47,7 +52,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Req() req: any) {
+  async refresh(@Req() req: CookieRequest) {
     const refreshToken = req.cookies?.refresh_token
     if (!refreshToken) {
       return { access_token: null }
@@ -57,7 +62,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: CookieRequest, @Res({ passthrough: true }) res: Response) {
     const userId = req.user?.id
     if (userId) {
       await this.authService.logout(userId)
