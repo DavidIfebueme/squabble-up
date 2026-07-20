@@ -3,10 +3,9 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 import { TopicsController } from './topics.controller'
 import { TopicsService } from './topics.service'
 import { Topic } from './topic.entity'
-import { Subtopic } from './subtopic.entity'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Topic, Subtopic])],
+  imports: [TypeOrmModule.forFeature([Topic])],
   controllers: [TopicsController],
   providers: [TopicsService],
   exports: [TopicsService],

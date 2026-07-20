@@ -3,13 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import { NotFoundException, ConflictException } from '@nestjs/common'
 import { TopicsService } from './topics.service'
 import { Topic } from './topic.entity'
-import { Subtopic } from './subtopic.entity'
 import { Repository } from 'typeorm'
 
 describe('TopicsService', () => {
   let service: TopicsService
   let topicRepo: jest.Mocked<Repository<Topic>>
-  let subtopicRepo: jest.Mocked<Repository<Subtopic>>
 
   const mockTopic: Topic = {
     id: 'topic-uuid-1',
@@ -19,14 +17,6 @@ describe('TopicsService', () => {
     category: 'science',
     created_by: null,
     debate_count: 0,
-    created_at: new Date(),
-  }
-
-  const mockSubtopic: Subtopic = {
-    id: 'sub-uuid-1',
-    name: 'Carbon Tax',
-    slug: 'carbon-tax',
-    topic_id: 'topic-uuid-1',
     created_at: new Date(),
   }
 
@@ -44,21 +34,11 @@ describe('TopicsService', () => {
             increment: jest.fn(),
           },
         },
-        {
-          provide: getRepositoryToken(Subtopic),
-          useValue: {
-            find: jest.fn(),
-            findOneBy: jest.fn(),
-            create: jest.fn(),
-            save: jest.fn(),
-          },
-        },
       ],
     }).compile()
 
     service = module.get(TopicsService)
     topicRepo = module.get(getRepositoryToken(Topic))
-    subtopicRepo = module.get(getRepositoryToken(Subtopic))
   })
 
   afterEach(() => jest.clearAllMocks())
@@ -146,6 +126,38 @@ describe('TopicsService', () => {
       )
     })
 
+    it('sets created_by when provided', async () => {
+      topicRepo.findOneBy.mockResolvedValue(null)
+      topicRepo.create.mockReturnValue(mockTopic)
+      topicRepo.save.mockResolvedValue(mockTopic)
+
+      await service.create({
+        title: 'Climate Change',
+        description: 'Debates about climate policy',
+        category: 'science',
+        created_by: 'user-uuid-1',
+      })
+
+      expect(topicRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ created_by: 'user-uuid-1' })
+      )
+    })
+
+    it('allows created_by to be null', async () => {
+      topicRepo.findOneBy.mockResolvedValue(null)
+      topicRepo.create.mockReturnValue(mockTopic)
+      topicRepo.save.mockResolvedValue(mockTopic)
+
+      await service.create({
+        title: 'Climate Change',
+        description: 'Debates about climate policy',
+        category: 'science',
+      })
+
+      const createCall = topicRepo.create.mock.calls[0][0]
+      expect(createCall).not.toHaveProperty('created_by')
+    })
+
     it('throws ConflictException for duplicate slug', async () => {
       topicRepo.findOneBy.mockResolvedValue(mockTopic)
 
@@ -172,70 +184,6 @@ describe('TopicsService', () => {
       expect(topicRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({ slug: 'ai-ethics' })
       )
-    })
-  })
-
-  describe('findSubtopicsByTopicId', () => {
-    it('returns subtopics for a topic', async () => {
-      subtopicRepo.find.mockResolvedValue([mockSubtopic])
-
-      const result = await service.findSubtopicsByTopicId('topic-uuid-1')
-
-      expect(result.success).toBe(true)
-      expect(result.data).toHaveLength(1)
-    })
-
-    it('returns empty array when no subtopics exist', async () => {
-      subtopicRepo.find.mockResolvedValue([])
-
-      const result = await service.findSubtopicsByTopicId('topic-uuid-1')
-
-      expect(result.data).toHaveLength(0)
-    })
-  })
-
-  describe('createSubtopic', () => {
-    it('creates subtopic with auto-generated slug', async () => {
-      topicRepo.findOneBy.mockResolvedValue(mockTopic)
-      subtopicRepo.findOneBy.mockResolvedValue(null)
-      subtopicRepo.create.mockReturnValue(mockSubtopic)
-      subtopicRepo.save.mockResolvedValue(mockSubtopic)
-
-      const result = await service.createSubtopic('topic-uuid-1', { name: 'Carbon Tax' })
-
-      expect(result.success).toBe(true)
-      expect(subtopicRepo.create).toHaveBeenCalledWith(
-        expect.objectContaining({ slug: 'carbon-tax', topic_id: 'topic-uuid-1' })
-      )
-    })
-
-    it('throws NotFoundException when topic does not exist', async () => {
-      topicRepo.findOneBy.mockResolvedValue(null)
-
-      await expect(
-        service.createSubtopic('nonexistent', { name: 'Carbon Tax' })
-      ).rejects.toThrow(NotFoundException)
-    })
-
-    it('throws ConflictException for duplicate slug within same topic', async () => {
-      topicRepo.findOneBy.mockResolvedValue(mockTopic)
-      subtopicRepo.findOneBy.mockResolvedValue(mockSubtopic)
-
-      await expect(
-        service.createSubtopic('topic-uuid-1', { name: 'Carbon Tax' })
-      ).rejects.toThrow(ConflictException)
-    })
-
-    it('allows same subtopic name under different topics', async () => {
-      topicRepo.findOneBy.mockResolvedValue(mockTopic)
-      subtopicRepo.findOneBy.mockResolvedValue(null)
-      subtopicRepo.create.mockReturnValue(mockSubtopic)
-      subtopicRepo.save.mockResolvedValue(mockSubtopic)
-
-      const result = await service.createSubtopic('topic-uuid-2', { name: 'Carbon Tax' })
-
-      expect(result.success).toBe(true)
-      expect(subtopicRepo.findOneBy).toHaveBeenCalledWith({ slug: 'carbon-tax', topic_id: 'topic-uuid-2' })
     })
   })
 

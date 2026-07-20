@@ -2,15 +2,12 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Topic } from './topic.entity'
-import { Subtopic } from './subtopic.entity'
 
 @Injectable()
 export class TopicsService {
   constructor(
     @InjectRepository(Topic)
     private readonly topicRepo: Repository<Topic>,
-    @InjectRepository(Subtopic)
-    private readonly subtopicRepo: Repository<Subtopic>,
   ) {}
 
   async findAll(category?: string, page = 1, limit = 20) {
@@ -43,7 +40,7 @@ export class TopicsService {
     return { success: true, data: topic }
   }
 
-  async create(data: { title: string; description: string; category: string }) {
+  async create(data: { title: string; description: string; category: string; created_by?: string }) {
     const slug = this.generateSlug(data.title)
 
     const existing = await this.topicRepo.findOneBy({ slug })
@@ -58,30 +55,6 @@ export class TopicsService {
 
   async incrementDebateCount(topicId: string) {
     await this.topicRepo.increment({ id: topicId }, 'debate_count', 1)
-  }
-
-  async findSubtopicsByTopicId(topicId: string) {
-    const subtopics = await this.subtopicRepo.find({
-      where: { topic_id: topicId },
-      order: { name: 'ASC' },
-    })
-    return { success: true, data: subtopics }
-  }
-
-  async createSubtopic(topicId: string, data: { name: string }) {
-    const topic = await this.topicRepo.findOneBy({ id: topicId })
-    if (!topic) throw new NotFoundException('Topic not found')
-
-    const slug = this.generateSlug(data.name)
-
-    const existing = await this.subtopicRepo.findOneBy({ slug, topic_id: topicId })
-    if (existing) {
-      throw new ConflictException('Subtopic with this name already exists in this topic')
-    }
-
-    const subtopic = this.subtopicRepo.create({ ...data, slug, topic_id: topicId })
-    await this.subtopicRepo.save(subtopic)
-    return { success: true, data: subtopic }
   }
 
   private generateSlug(title: string): string {
