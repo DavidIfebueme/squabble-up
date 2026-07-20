@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common'
+import { Controller, Get, Post, Body, Param, Query, UseGuards, Request, ParseUUIDPipe } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger'
 import { DebatesService } from './debates.service'
-import { CreateDebateDto, JoinDebateDto } from './dto'
+import { CreateDebateDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard'
 
@@ -40,7 +40,7 @@ export class DebatesController {
   @ApiParam({ name: 'id', description: 'Debate UUID' })
   @ApiResponse({ status: 200, description: 'Debate found' })
   @ApiResponse({ status: 404, description: 'Debate not found' })
-  async get(@Param('id') id: string) {
+  async get(@Param('id', ParseUUIDPipe) id: string) {
     return this.debatesService.findById(id)
   }
 
@@ -58,7 +58,7 @@ export class DebatesController {
   @ApiParam({ name: 'id', description: 'Debate UUID' })
   @ApiResponse({ status: 200, description: 'Joined debate' })
   @ApiResponse({ status: 400, description: 'Debate is full or not open' })
-  async join(@Request() req: any, @Param('id') id: string, @Body() _body: JoinDebateDto) {
+  async join(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
     return this.debatesService.join(id, req.user?.id ?? null)
   }
 
@@ -68,8 +68,9 @@ export class DebatesController {
   @ApiParam({ name: 'id', description: 'Debate UUID' })
   @ApiResponse({ status: 200, description: 'Debate started' })
   @ApiResponse({ status: 400, description: 'Missing participants or wrong state' })
-  async start(@Param('id') id: string) {
-    return this.debatesService.start(id)
+  @ApiResponse({ status: 403, description: 'Not a participant' })
+  async start(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+    return this.debatesService.start(id, req.user.id)
   }
 
   @Post(':id/complete')
@@ -78,8 +79,9 @@ export class DebatesController {
   @ApiParam({ name: 'id', description: 'Debate UUID' })
   @ApiResponse({ status: 200, description: 'Debate completed' })
   @ApiResponse({ status: 400, description: 'Debate is not active' })
-  async complete(@Param('id') id: string) {
-    return this.debatesService.complete(id)
+  @ApiResponse({ status: 403, description: 'Not a participant' })
+  async complete(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+    return this.debatesService.complete(id, req.user.id)
   }
 
   @Post(':id/abandon')
@@ -89,7 +91,7 @@ export class DebatesController {
   @ApiResponse({ status: 200, description: 'Debate abandoned' })
   @ApiResponse({ status: 400, description: 'Wrong state' })
   @ApiResponse({ status: 403, description: 'Not a participant' })
-  async abandon(@Request() req: any, @Param('id') id: string) {
+  async abandon(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
     return this.debatesService.abandon(id, req.user.id)
   }
 }

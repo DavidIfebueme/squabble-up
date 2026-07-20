@@ -11,10 +11,3 @@ export class CreateDebateDto {
   @IsIn(['creator', 'opponent'])
   participant_role?: 'creator' | 'opponent'
 }
-
-export class JoinDebateDto {
-  @ApiPropertyOptional({ description: 'Guest session token (for unauthenticated joins)' })
-  @IsOptional()
-  @IsString()
-  session_token?: string
-}

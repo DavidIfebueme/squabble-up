@@ -147,7 +147,7 @@ describe('DebatesService', () => {
       debateRepo.findOneBy.mockResolvedValue(debate)
       debateRepo.save.mockResolvedValue({ ...debate, status: 'active' })
 
-      const result = await service.start('debate-uuid-1')
+      const result = await service.start('debate-uuid-1', 'user-1')
 
       expect(result.success).toBe(true)
       expect(result.data.status).toBe('active')
@@ -156,19 +156,25 @@ describe('DebatesService', () => {
     it('throws BadRequestException with missing opponent', async () => {
       debateRepo.findOneBy.mockResolvedValue(createMockDebate())
 
-      await expect(service.start('debate-uuid-1')).rejects.toThrow(BadRequestException)
+      await expect(service.start('debate-uuid-1', 'user-1')).rejects.toThrow(BadRequestException)
     })
 
     it('throws BadRequestException with non-pending debate', async () => {
       debateRepo.findOneBy.mockResolvedValue(createMockDebate({ status: 'active', opponent_id: 'user-2' }))
 
-      await expect(service.start('debate-uuid-1')).rejects.toThrow(BadRequestException)
+      await expect(service.start('debate-uuid-1', 'user-1')).rejects.toThrow(BadRequestException)
     })
 
     it('throws NotFoundException for non-existent debate', async () => {
       debateRepo.findOneBy.mockResolvedValue(null)
 
-      await expect(service.start('nonexistent')).rejects.toThrow(NotFoundException)
+      await expect(service.start('nonexistent', 'user-1')).rejects.toThrow(NotFoundException)
+    })
+
+    it('throws ForbiddenException by non-participant', async () => {
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate({ opponent_id: 'user-2' }))
+
+      await expect(service.start('debate-uuid-1', 'user-99')).rejects.toThrow(ForbiddenException)
     })
   })
 
@@ -178,7 +184,7 @@ describe('DebatesService', () => {
       debateRepo.findOneBy.mockResolvedValue(debate)
       debateRepo.save.mockResolvedValue({ ...debate, status: 'completed' })
 
-      const result = await service.complete('debate-uuid-1')
+      const result = await service.complete('debate-uuid-1', 'user-1')
 
       expect(result.success).toBe(true)
       expect(result.data.status).toBe('completed')
@@ -188,13 +194,19 @@ describe('DebatesService', () => {
     it('throws BadRequestException for non-active debate', async () => {
       debateRepo.findOneBy.mockResolvedValue(createMockDebate())
 
-      await expect(service.complete('debate-uuid-1')).rejects.toThrow(BadRequestException)
+      await expect(service.complete('debate-uuid-1', 'user-1')).rejects.toThrow(BadRequestException)
     })
 
     it('throws NotFoundException for non-existent debate', async () => {
       debateRepo.findOneBy.mockResolvedValue(null)
 
-      await expect(service.complete('nonexistent')).rejects.toThrow(NotFoundException)
+      await expect(service.complete('nonexistent', 'user-1')).rejects.toThrow(NotFoundException)
+    })
+
+    it('throws ForbiddenException by non-participant', async () => {
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate({ status: 'active', opponent_id: 'user-2' }))
+
+      await expect(service.complete('debate-uuid-1', 'user-99')).rejects.toThrow(ForbiddenException)
     })
   })
 
@@ -231,6 +243,7 @@ describe('DebatesService', () => {
 
   describe('setScoringFailed', () => {
     it('updates status to scoring_failed', async () => {
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate({ status: 'active', opponent_id: 'user-2' }))
       debateRepo.update.mockResolvedValue(undefined as any)
 
       await service.setScoringFailed('debate-uuid-1')
@@ -240,10 +253,23 @@ describe('DebatesService', () => {
         { status: 'scoring_failed' }
       )
     })
+
+    it('throws NotFoundException for non-existent debate', async () => {
+      debateRepo.findOneBy.mockResolvedValue(null)
+
+      await expect(service.setScoringFailed('nonexistent')).rejects.toThrow(NotFoundException)
+    })
+
+    it('throws BadRequestException for non-active debate', async () => {
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate())
+
+      await expect(service.setScoringFailed('debate-uuid-1')).rejects.toThrow(BadRequestException)
+    })
   })
 
   describe('setWinner', () => {
     it('updates winner_id', async () => {
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate({ status: 'completed', opponent_id: 'user-2' }))
       debateRepo.update.mockResolvedValue(undefined as any)
 
       await service.setWinner('debate-uuid-1', 'user-1')
@@ -252,6 +278,18 @@ describe('DebatesService', () => {
         { id: 'debate-uuid-1' },
         { winner_id: 'user-1' }
       )
+    })
+
+    it('throws NotFoundException for non-existent debate', async () => {
+      debateRepo.findOneBy.mockResolvedValue(null)
+
+      await expect(service.setWinner('nonexistent', 'user-1')).rejects.toThrow(NotFoundException)
+    })
+
+    it('throws BadRequestException for non-active/completed debate', async () => {
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate())
+
+      await expect(service.setWinner('debate-uuid-1', 'user-1')).rejects.toThrow(BadRequestException)
     })
   })
 
@@ -342,7 +380,7 @@ describe('DebatesService', () => {
 
       debateRepo.findOneBy.mockResolvedValue(createMockDebate({ opponent_id: 'user-2' }))
       debateRepo.save.mockResolvedValue(createMockDebate({ status: 'active', opponent_id: 'user-2' }))
-      await service.start('debate-uuid-1')
+      await service.start('debate-uuid-1', 'user-1')
 
       expect(service['pendingTimers'].has('debate-uuid-1')).toBe(false)
     })

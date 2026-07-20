@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Share } from 'react-native'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Share, Alert } from 'react-native'
 import type { Debate } from '@squabble-up/shared'
-import { getDebate } from '../lib/debates'
+import { getDebate, joinDebate } from '../lib/debates'
 
 const COLORS = {
   bgPrimary: '#1E1E1E',
@@ -16,36 +16,66 @@ const COLORS = {
 
 const TIMEOUT_MS = 5 * 60 * 1000
 const COUNTDOWN_SECONDS = 3
+const POLL_INTERVAL_MS = 3000
 
 export default function DebateLobbyScreen({ route, navigation }: any) {
-  const { debateId, side } = route.params
+  const { debateId, side: initialSide } = route.params
   const [debate, setDebate] = useState<Debate | null>(null)
+  const [side, setSide] = useState<'creator' | 'opponent'>(initialSide ?? 'creator')
+  const [joined, setJoined] = useState(!!initialSide)
   const [opponentJoined, setOpponentJoined] = useState(false)
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS)
   const [timedOut, setTimedOut] = useState(false)
+  const [joining, setJoining] = useState(false)
   const pulseAnim = useRef(new Animated.Value(1)).current
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  useEffect(() => {
-    getDebate(debateId).then(result => {
-      if (result.success) setDebate(result.data)
-    })
+  const fetchDebate = useCallback(async () => {
+    try {
+      const result = await getDebate(debateId)
+      if (result.success) {
+        setDebate(result.data)
+        if (result.data.opponent_id) setOpponentJoined(true)
+      }
+    } catch { /* silent */ }
   }, [debateId])
 
   useEffect(() => {
-    if (debate?.opponent_id && !opponentJoined) {
-      setOpponentJoined(true)
-    }
-  }, [debate?.opponent_id, opponentJoined])
+    fetchDebate()
+  }, [fetchDebate])
+
+  useEffect(() => {
+    if (joined || joining) return
+    setJoining(true)
+    joinDebate(debateId).then(result => {
+      if (result.success) {
+        setJoined(true)
+        setSide(result.data.debate.creator_id ? 'creator' : 'opponent')
+        setDebate(result.data.debate)
+      }
+    }).catch(() => {
+      Alert.alert('Error', 'Could not join debate.')
+      navigation.goBack()
+    })
+  }, [debateId, joined, joining, navigation])
+
+  useEffect(() => {
+    if (!joined) return
+    pollRef.current = setInterval(fetchDebate, POLL_INTERVAL_MS)
+    return () => { if (pollRef.current) clearInterval(pollRef.current) }
+  }, [joined, fetchDebate])
 
   useEffect(() => {
     if (!opponentJoined || timedOut) return
+    if (pollRef.current) clearInterval(pollRef.current)
     if (countdown <= 0) {
-      navigation.replace('PreDebate', { debateId, side })
+      Alert.alert('Debate Ready', 'Both participants are here. The debate will begin soon.')
+      navigation.navigate('Main')
       return
     }
     const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
     return () => clearTimeout(timer)
-  }, [countdown, opponentJoined, timedOut, debateId, side, navigation])
+  }, [countdown, opponentJoined, timedOut, navigation])
 
   useEffect(() => {
     if (timedOut) return
@@ -82,7 +112,7 @@ export default function DebateLobbyScreen({ route, navigation }: any) {
           ? countdown > 0 ? `${countdown}` : 'Starting...'
           : timedOut
             ? 'No one joined.'
-            : 'Waiting for opponent...'}
+            : joining ? 'Joining debate...' : 'Waiting for opponent...'}
       </Text>
 
       {debate && (

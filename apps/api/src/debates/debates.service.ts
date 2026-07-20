@@ -106,10 +106,13 @@ export class DebatesService {
     return { success: true, data: { debate } }
   }
 
-  async start(debateId: string) {
+  async start(debateId: string, userId: string) {
     const debate = await this.debateRepo.findOneBy({ id: debateId })
     if (!debate) throw new NotFoundException('Debate not found')
     if (debate.status !== 'pending') throw new BadRequestException('Debate is not in pending state')
+    if (debate.creator_id !== userId && debate.opponent_id !== userId) {
+      throw new ForbiddenException('Only participants can start a debate')
+    }
     if (!debate.creator_id || !debate.opponent_id) {
       throw new BadRequestException('Both participants required to start')
     }
@@ -119,10 +122,13 @@ export class DebatesService {
     return { success: true, data: debate }
   }
 
-  async complete(debateId: string) {
+  async complete(debateId: string, userId: string) {
     const debate = await this.debateRepo.findOneBy({ id: debateId })
     if (!debate) throw new NotFoundException('Debate not found')
     if (debate.status !== 'active') throw new BadRequestException('Debate is not active')
+    if (debate.creator_id !== userId && debate.opponent_id !== userId) {
+      throw new ForbiddenException('Only participants can complete a debate')
+    }
     debate.status = 'completed'
     debate.completed_at = new Date()
     await this.debateRepo.save(debate)
@@ -145,10 +151,18 @@ export class DebatesService {
   }
 
   async setScoringFailed(debateId: string) {
+    const debate = await this.debateRepo.findOneBy({ id: debateId })
+    if (!debate) throw new NotFoundException('Debate not found')
+    if (debate.status !== 'active') throw new BadRequestException('Debate is not active')
     await this.debateRepo.update({ id: debateId }, { status: 'scoring_failed' })
   }
 
   async setWinner(debateId: string, winnerId: string) {
+    const debate = await this.debateRepo.findOneBy({ id: debateId })
+    if (!debate) throw new NotFoundException('Debate not found')
+    if (debate.status !== 'active' && debate.status !== 'completed') {
+      throw new BadRequestException('Debate must be active or completed to set a winner')
+    }
     await this.debateRepo.update({ id: debateId }, { winner_id: winnerId })
   }
 
