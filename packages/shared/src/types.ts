@@ -30,6 +30,8 @@ export interface Debate {
 
 export type RoundNumber = 1 | 2 | 3
 
+export type RoundType = 'opening' | 'rebuttal' | 'closing'
+
 export interface Round {
   id: string
   debate_id: string

@@ -16,7 +16,7 @@ export async function getDebate(id: string) {
   return data
 }
 
-export async function createDebate(body: { topic_id: string; participant_role?: 'creator' | 'opponent' }) {
+export async function createDebate(body: { topic_id: string; participant_role?: 'creator' | 'opponent'; community_voting?: boolean }) {
   const { data } = await api.post<{ success: boolean; data: { debate: Debate } }>('/debates', body)
   return data
 }

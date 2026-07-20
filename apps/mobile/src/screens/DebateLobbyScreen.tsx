@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Share, Alert } from 'react-native'
 import type { Debate } from '@squabble-up/shared'
 import { getDebate, joinDebate } from '../lib/debates'
+import { getTopicByIdentifier } from '../lib/topics'
+import { DEBATE_ROUNDS, ROUND_DURATIONS, ROUND_NUMBER_TO_TYPE } from '@squabble-up/shared'
 
 const COLORS = {
   bgPrimary: '#1E1E1E',
@@ -21,6 +23,7 @@ const POLL_INTERVAL_MS = 3000
 export default function DebateLobbyScreen({ route, navigation }: any) {
   const { debateId, side: initialSide } = route.params
   const [debate, setDebate] = useState<Debate | null>(null)
+  const [topicTitle, setTopicTitle] = useState<string | null>(null)
   const [side, setSide] = useState<'creator' | 'opponent'>(initialSide ?? 'creator')
   const [joined, setJoined] = useState(!!initialSide)
   const [opponentJoined, setOpponentJoined] = useState(false)
@@ -45,12 +48,19 @@ export default function DebateLobbyScreen({ route, navigation }: any) {
   }, [fetchDebate])
 
   useEffect(() => {
+    if (!debate) return
+    getTopicByIdentifier(debate.topic_id).then(result => {
+      if (result.success) setTopicTitle(result.data.title)
+    })
+  }, [debate?.topic_id])
+
+  useEffect(() => {
     if (joined || joining) return
     setJoining(true)
     joinDebate(debateId).then(result => {
       if (result.success) {
         setJoined(true)
-        setSide(result.data.debate.creator_id ? 'creator' : 'opponent')
+        setSide('opponent')
         setDebate(result.data.debate)
       } else {
         Alert.alert('Error', 'Could not join debate.')
@@ -72,13 +82,12 @@ export default function DebateLobbyScreen({ route, navigation }: any) {
     if (!opponentJoined || timedOut) return
     if (pollRef.current) clearInterval(pollRef.current)
     if (countdown <= 0) {
-      Alert.alert('Debate Ready', 'Both participants are here. The debate will begin soon.')
-      navigation.navigate('Main')
+      navigation.replace('DebateRound', { debateId, roundNumber: 1, side })
       return
     }
     const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
     return () => clearTimeout(timer)
-  }, [countdown, opponentJoined, timedOut, navigation])
+  }, [countdown, opponentJoined, timedOut, navigation, debateId, side])
 
   useEffect(() => {
     if (timedOut || opponentJoined) return
@@ -107,6 +116,12 @@ export default function DebateLobbyScreen({ route, navigation }: any) {
   const handleLeave = () => navigation.goBack()
 
   const sideLabel = side === 'creator' ? 'FOR' : 'AGAINST'
+  const rules = Array.from({ length: DEBATE_ROUNDS }, (_, i) => {
+    const num = i + 1
+    const type = ROUND_NUMBER_TO_TYPE[num as keyof typeof ROUND_NUMBER_TO_TYPE]
+    const dur = type ? ROUND_DURATIONS[type] : 90
+    return { round: num, name: type ? type.charAt(0).toUpperCase() + type.slice(1) : '', duration: dur }
+  })
 
   return (
     <View style={styles.container}>
@@ -118,11 +133,22 @@ export default function DebateLobbyScreen({ route, navigation }: any) {
             : joining ? 'Joining debate...' : 'Waiting for opponent...'}
       </Text>
 
-      {debate && (
-        <Text style={styles.debateId}>Debate #{debate.id.slice(0, 8)}</Text>
+      {topicTitle && (
+        <Text style={styles.topicTitle}>{topicTitle}</Text>
       )}
 
       <Text style={styles.sideBadge}>You: {sideLabel}</Text>
+
+      {!opponentJoined && !timedOut && (
+        <View style={styles.rulesContainer}>
+          {rules.map(r => (
+            <Text key={r.round} style={styles.ruleText}>
+              Round {r.round}: {r.name} — {r.duration}s
+            </Text>
+          ))}
+          <Text style={styles.ruleTagline}>Be sharp, be fair, be heard.</Text>
+        </View>
+      )}
 
       <View style={styles.slots}>
         <View style={styles.slot}>
@@ -167,8 +193,11 @@ export default function DebateLobbyScreen({ route, navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgPrimary, alignItems: 'center', justifyContent: 'center', padding: 24 },
   heading: { fontFamily: 'serif', fontSize: 22, color: COLORS.textPrimary, marginBottom: 8, textAlign: 'center' },
-  debateId: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 8 },
-  sideBadge: { backgroundColor: COLORS.accentAmber, color: COLORS.bgPrimary, fontSize: 14, fontWeight: '700', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginBottom: 48 },
+  topicTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8, textAlign: 'center' },
+  sideBadge: { backgroundColor: COLORS.accentAmber, color: COLORS.bgPrimary, fontSize: 14, fontWeight: '700', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginBottom: 24 },
+  rulesContainer: { backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginBottom: 24, width: '100%' },
+  ruleText: { fontSize: 14, color: COLORS.textSecondary, marginBottom: 4 },
+  ruleTagline: { fontSize: 14, color: COLORS.textMuted, fontStyle: 'italic', marginTop: 8 },
   slots: { flexDirection: 'row', gap: 48, marginBottom: 48 },
   slot: { alignItems: 'center' },
   avatar: { width: 72, height: 72, borderRadius: 36, marginBottom: 8, alignItems: 'center', justifyContent: 'center' },

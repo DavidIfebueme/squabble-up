@@ -15,7 +15,9 @@
       "supportsTablet": true,
       "bundleIdentifier": "app.squabbleup.mobile",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": ["audio"],
+        "NSSpeechRecognitionUsageDescription": "Allow Squabble Up to recognize your speech for transcription",
+        "NSMicrophoneUsageDescription": "Allow Squabble Up to access your microphone for recording"
       }
     },
     "android": {
@@ -32,6 +34,12 @@
         }
       ]
     },
-    "plugins": ["expo-av"]
+    "plugins": [
+      "expo-av",
+      ["@react-native-voice/voice", {
+        "speechRecognitionPermission": "Allow Squabble Up to recognize your speech for transcription",
+        "microphonePermission": "Allow Squabble Up to access your microphone for recording"
+      }]
+    ]
   }
 }

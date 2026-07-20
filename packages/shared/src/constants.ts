@@ -1,4 +1,4 @@
-import type { DebateStatus } from './types'
+import type { DebateStatus, RoundType, RoundNumber } from './types'
 
 export const DEBATE_STATUSES: Record<DebateStatus, DebateStatus> = {
   pending: 'pending',
@@ -18,6 +18,18 @@ export const DEEP_LINK_SCHEME = 'squabbleup'
 export const DEFAULT_ELO = 1000
 export const K_FACTOR = 32
 export const DEBATE_ROUNDS = 3
+
+export const ROUND_DURATIONS: Record<RoundType, number> = {
+  opening: 90,
+  rebuttal: 90,
+  closing: 60,
+}
+
+export const ROUND_NUMBER_TO_TYPE: Record<RoundNumber, RoundType> = {
+  1: 'opening',
+  2: 'rebuttal',
+  3: 'closing',
+}
 
 export const SCORING_RETRY_CONFIG = {
   auto_retries: 1,
