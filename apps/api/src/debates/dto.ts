@@ -1,9 +1,9 @@
-import { IsString, IsOptional, IsIn } from 'class-validator'
+import { IsOptional, IsIn, IsUUID } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export class CreateDebateDto {
   @ApiProperty({ description: 'Topic UUID' })
-  @IsString()
+  @IsUUID()
   topic_id: string
 
   @ApiPropertyOptional({ enum: ['creator', 'opponent'], description: 'Participant role' })

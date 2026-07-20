@@ -52,6 +52,9 @@ export default function DebateLobbyScreen({ route, navigation }: any) {
         setJoined(true)
         setSide(result.data.debate.creator_id ? 'creator' : 'opponent')
         setDebate(result.data.debate)
+      } else {
+        Alert.alert('Error', 'Could not join debate.')
+        navigation.goBack()
       }
     }).catch(() => {
       Alert.alert('Error', 'Could not join debate.')
@@ -78,10 +81,10 @@ export default function DebateLobbyScreen({ route, navigation }: any) {
   }, [countdown, opponentJoined, timedOut, navigation])
 
   useEffect(() => {
-    if (timedOut) return
+    if (timedOut || opponentJoined) return
     const timer = setTimeout(() => setTimedOut(true), TIMEOUT_MS)
     return () => clearTimeout(timer)
-  }, [timedOut])
+  }, [timedOut, opponentJoined])
 
   useEffect(() => {
     if (opponentJoined) return

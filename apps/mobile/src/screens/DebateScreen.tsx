@@ -73,7 +73,7 @@ export default function DebateScreen({ navigation }: any) {
       <Text style={styles.debateId}>Debate #{item.id.slice(0, 8)}</Text>
       <View style={styles.row}>
         <Text style={styles.participants}>
-          {item.creator_id ? '1' : '0'}/2 participants
+          {[item.creator_id, item.opponent_id].filter(Boolean).length}/2 participants
         </Text>
         {item.status === 'pending' && (
           <TouchableOpacity

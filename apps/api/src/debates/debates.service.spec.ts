@@ -139,6 +139,12 @@ describe('DebatesService', () => {
 
       await expect(service.join('debate-uuid-1', 'user-3')).rejects.toThrow(BadRequestException)
     })
+
+    it('throws BadRequestException for guest when debate is full', async () => {
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate({ opponent_id: 'user-2' }))
+
+      await expect(service.join('debate-uuid-1', null)).rejects.toThrow(BadRequestException)
+    })
   })
 
   describe('start', () => {
@@ -207,6 +213,17 @@ describe('DebatesService', () => {
       debateRepo.findOneBy.mockResolvedValue(createMockDebate({ status: 'active', opponent_id: 'user-2' }))
 
       await expect(service.complete('debate-uuid-1', 'user-99')).rejects.toThrow(ForbiddenException)
+    })
+
+    it('completes debate when userId is omitted (system call)', async () => {
+      const debate = createMockDebate({ status: 'active', opponent_id: 'user-2' })
+      debateRepo.findOneBy.mockResolvedValue(debate)
+      debateRepo.save.mockResolvedValue({ ...debate, status: 'completed' })
+
+      const result = await service.complete('debate-uuid-1')
+
+      expect(result.success).toBe(true)
+      expect(result.data.status).toBe('completed')
     })
   })
 

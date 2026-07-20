@@ -92,6 +92,9 @@ export class DebatesService {
       else if (!debate.opponent_id) debate.opponent_id = userId
       else throw new BadRequestException('Debate is full')
     } else {
+      if (debate.creator_id && debate.opponent_id) {
+        throw new BadRequestException('Debate is full')
+      }
       const role = !debate.creator_id ? 'creator' : 'opponent'
       if (role === 'creator') debate.creator_id = `guest_${uuid()}`
       else debate.opponent_id = `guest_${uuid()}`
@@ -122,11 +125,11 @@ export class DebatesService {
     return { success: true, data: debate }
   }
 
-  async complete(debateId: string, userId: string) {
+  async complete(debateId: string, userId?: string) {
     const debate = await this.debateRepo.findOneBy({ id: debateId })
     if (!debate) throw new NotFoundException('Debate not found')
     if (debate.status !== 'active') throw new BadRequestException('Debate is not active')
-    if (debate.creator_id !== userId && debate.opponent_id !== userId) {
+    if (userId && debate.creator_id !== userId && debate.opponent_id !== userId) {
       throw new ForbiddenException('Only participants can complete a debate')
     }
     debate.status = 'completed'
