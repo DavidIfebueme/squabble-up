@@ -19,7 +19,6 @@ import { RedisModule } from '../redis/redis.module'
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '7d' },
       }),
     }),
     TypeOrmModule.forFeature([User]),

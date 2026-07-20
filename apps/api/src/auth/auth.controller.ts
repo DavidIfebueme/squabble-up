@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus, Req, Res, UseGuards } from '@nestjs/common'
+import { Controller, Post, Get, Body, Param, HttpCode, HttpStatus, Req, Res, UseGuards, UnauthorizedException } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { AuthService } from './auth.service'
 import { RegisterDto, LoginDto, GoogleAuthDto } from './dto'
@@ -57,7 +57,7 @@ export class AuthController {
   async refresh(@Req() req: CookieRequest, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refresh_token
     if (!refreshToken) {
-      throw new Error('No refresh token')
+      throw new UnauthorizedException('No refresh token')
     }
     const result = await this.authService.refresh(refreshToken)
     res.cookie('refresh_token', result.refresh_token, REFRESH_COOKIE_OPTIONS)
