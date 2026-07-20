@@ -167,18 +167,6 @@ describe('AuthService', () => {
 
       expect(result.user).not.toHaveProperty('password_hash')
     })
-
-    it('still returns user even if email service fails', async () => {
-      userRepo.findOne.mockResolvedValue(null)
-      userRepo.create.mockReturnValue(mockUser)
-      userRepo.save.mockResolvedValue(mockUser)
-      jwtService.sign.mockReturnValue('verify-token')
-      emailService.sendVerificationEmail.mockRejectedValue(new Error('SMTP down'))
-
-      const result = await service.register('test@example.com', 'password123', 'Test User')
-
-      expect(result.user.email).toBe('test@example.com')
-    })
   })
 
   describe('login', () => {

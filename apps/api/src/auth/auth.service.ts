@@ -47,10 +47,7 @@ export class AuthService {
       { uid: user.id, purpose: 'email_verification' },
       { expiresIn: '24h' },
     )
-    try {
-      await this.emailService.sendVerificationEmail(email, verifyToken)
-    } catch {
-    }
+    await this.emailService.sendVerificationEmail(email, verifyToken)
 
     return { user: this.sanitizeUser(user) }
   }
