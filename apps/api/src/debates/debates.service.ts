@@ -7,8 +7,12 @@ import { GuestSession } from './guest-session.entity'
 import { TopicsService } from '../topics/topics.service'
 import { GUEST_SESSION_TTL_HOURS } from '@squabble-up/shared'
 
+const DEBATE_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
+
 @Injectable()
 export class DebatesService {
+  private readonly pendingTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
   constructor(
     @InjectRepository(Debate)
     private readonly debateRepo: Repository<Debate>,
@@ -66,6 +70,8 @@ export class DebatesService {
     await this.debateRepo.save(debate)
     await this.topicsService.incrementDebateCount(body.topic_id)
 
+    this.startAbandonTimer(debate.id)
+
     const session = userId
       ? null
       : await this.createGuestSession(debate.id, role)
@@ -91,10 +97,12 @@ export class DebatesService {
       else debate.opponent_id = `guest_${uuid()}`
       const session = await this.createGuestSession(debateId, role)
       await this.debateRepo.save(debate)
+      this.clearAbandonTimer(debateId)
       return { success: true, data: { debate, guest_session: session } }
     }
 
     await this.debateRepo.save(debate)
+    this.clearAbandonTimer(debateId)
     return { success: true, data: { debate } }
   }
 
@@ -105,6 +113,7 @@ export class DebatesService {
     if (!debate.creator_id || !debate.opponent_id) {
       throw new BadRequestException('Both participants required to start')
     }
+    this.clearAbandonTimer(debateId)
     debate.status = 'active'
     await this.debateRepo.save(debate)
     return { success: true, data: debate }
@@ -129,6 +138,7 @@ export class DebatesService {
     if (debate.creator_id !== userId && debate.opponent_id !== userId) {
       throw new ForbiddenException('Only participants can abandon a debate')
     }
+    this.clearAbandonTimer(debateId)
     debate.status = 'abandoned'
     await this.debateRepo.save(debate)
     return { success: true, data: debate }
@@ -151,5 +161,25 @@ export class DebatesService {
     })
     await this.guestSessionRepo.save(session)
     return session
+  }
+
+  private startAbandonTimer(debateId: string) {
+    const timer = setTimeout(async () => {
+      this.pendingTimers.delete(debateId)
+      const debate = await this.debateRepo.findOneBy({ id: debateId })
+      if (debate && debate.status === 'pending') {
+        debate.status = 'abandoned'
+        await this.debateRepo.save(debate)
+      }
+    }, DEBATE_TIMEOUT_MS)
+    this.pendingTimers.set(debateId, timer)
+  }
+
+  private clearAbandonTimer(debateId: string) {
+    const timer = this.pendingTimers.get(debateId)
+    if (timer) {
+      clearTimeout(timer)
+      this.pendingTimers.delete(debateId)
+    }
   }
 }

@@ -60,7 +60,10 @@ describe('DebatesService', () => {
     topicsService = module.get(TopicsService)
   })
 
-  afterEach(() => jest.clearAllMocks())
+  afterEach(() => {
+    jest.clearAllMocks()
+    jest.useRealTimers()
+  })
 
   describe('create', () => {
     it('creates debate with status=pending and creator_id set', async () => {
@@ -284,6 +287,64 @@ describe('DebatesService', () => {
       expect(debateRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({ where: { status: 'pending' } })
       )
+    })
+  })
+
+  describe('auto-abandon timer', () => {
+    beforeEach(() => jest.useFakeTimers())
+
+    it('starts timer on create', async () => {
+      const debate = createMockDebate()
+      debateRepo.create.mockReturnValue(debate)
+      debateRepo.save.mockResolvedValue(debate)
+
+      await service.create('user-1', { topic_id: 'topic-uuid-1' })
+
+      expect(service['pendingTimers'].has('debate-uuid-1')).toBe(true)
+    })
+
+    it('clears timer on join', async () => {
+      const debate = createMockDebate()
+      debateRepo.create.mockReturnValue(debate)
+      debateRepo.save.mockResolvedValue(debate)
+      await service.create('user-1', { topic_id: 'topic-uuid-1' })
+
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate())
+      debateRepo.save.mockResolvedValue(createMockDebate({ opponent_id: 'user-2' }))
+      await service.join('debate-uuid-1', 'user-2')
+
+      expect(service['pendingTimers'].has('debate-uuid-1')).toBe(false)
+    })
+
+    it('abandons debate after timeout', async () => {
+      const debate = createMockDebate()
+      debateRepo.create.mockReturnValue(debate)
+      debateRepo.save.mockResolvedValue(debate)
+      await service.create('user-1', { topic_id: 'topic-uuid-1' })
+
+      const abandonedDebate = createMockDebate({ status: 'abandoned' })
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate())
+      debateRepo.save.mockResolvedValue(abandonedDebate)
+
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate())
+      debateRepo.save.mockResolvedValue(undefined as any)
+
+      jest.advanceTimersByTime(5 * 60 * 1000)
+
+      expect(debateRepo.findOneBy).toHaveBeenCalled()
+    })
+
+    it('clears timer on start', async () => {
+      const debate = createMockDebate({ opponent_id: 'user-2' })
+      debateRepo.create.mockReturnValue(debate)
+      debateRepo.save.mockResolvedValue(debate)
+      await service.create('user-1', { topic_id: 'topic-uuid-1' })
+
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate({ opponent_id: 'user-2' }))
+      debateRepo.save.mockResolvedValue(createMockDebate({ status: 'active', opponent_id: 'user-2' }))
+      await service.start('debate-uuid-1')
+
+      expect(service['pendingTimers'].has('debate-uuid-1')).toBe(false)
     })
   })
 })

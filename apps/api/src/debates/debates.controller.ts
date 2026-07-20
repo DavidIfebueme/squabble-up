@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Request } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger'
 import { DebatesService } from './debates.service'
-import { CreateDebateDto } from './dto'
+import { CreateDebateDto, JoinDebateDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard'
 
@@ -58,7 +58,7 @@ export class DebatesController {
   @ApiParam({ name: 'id', description: 'Debate UUID' })
   @ApiResponse({ status: 200, description: 'Joined debate' })
   @ApiResponse({ status: 400, description: 'Debate is full or not open' })
-  async join(@Request() req: any, @Param('id') id: string) {
+  async join(@Request() req: any, @Param('id') id: string, @Body() _body: JoinDebateDto) {
     return this.debatesService.join(id, req.user?.id ?? null)
   }
 
