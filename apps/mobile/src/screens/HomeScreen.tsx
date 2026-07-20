@@ -23,9 +23,11 @@ export default function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  const [error, setError] = useState(false)
 
   const fetchTopics = useCallback(async (pageNum = 1, append = false) => {
     try {
+      setError(false)
       const category = selectedCategory === 'All' ? undefined : selectedCategory
       const result = await getTopics({ category, page: pageNum, limit: 20 })
       if (result.success && result.data) {
@@ -33,7 +35,7 @@ export default function HomeScreen({ navigation }: any) {
         setHasMore(result.has_more)
       }
     } catch {
-      // error handled silently for now
+      setError(true)
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -111,6 +113,13 @@ export default function HomeScreen({ navigation }: any) {
               <View style={styles.skeletonMeta} />
             </View>
           ))}
+        </View>
+      ) : error ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>Couldn't load feed.</Text>
+          <TouchableOpacity onPress={onRefresh}>
+            <Text style={[styles.emptyBody, { color: COLORS.accentAmber }]}>Retry</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList

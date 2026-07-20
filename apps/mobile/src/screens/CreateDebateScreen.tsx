@@ -76,7 +76,7 @@ export default function CreateDebateScreen({ navigation }: any) {
           <Text style={styles.selectedLabel}>Selected: {selectedTopic.title}</Text>
           <TouchableOpacity
             style={styles.startButton}
-            onPress={() => navigation.navigate('DebateLobby', { topicId: selectedTopic.id })}
+            onPress={() => navigation.goBack()}
           >
             <Text style={styles.startButtonText}>Start Debate</Text>
           </TouchableOpacity>
