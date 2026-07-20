@@ -76,6 +76,9 @@ describe('AuthService', () => {
             set: jest.fn(),
             get: jest.fn(),
             del: jest.fn(),
+            sadd: jest.fn(),
+            srem: jest.fn(),
+            smembers: jest.fn(),
           },
         },
       ],
@@ -258,6 +261,8 @@ describe('AuthService', () => {
       const result = await service.googleAuth({
         sub: 'google-uid-456',
         email: 'test@example.com',
+        name: 'Test User',
+        picture: 'https://example.com/avatar.jpg',
       })
 
       expect(result.user.auth_provider).toBe('google')
@@ -272,6 +277,7 @@ describe('AuthService', () => {
         sub: 'google-uid-456',
         email: 'test@example.com',
         name: 'Test User',
+        picture: 'https://example.com/avatar.jpg',
       })
 
       expect(userRepo.save).toHaveBeenCalledWith(
@@ -292,6 +298,8 @@ describe('AuthService', () => {
       await service.googleAuth({
         sub: 'google-uid-456',
         email: 'test@example.com',
+        name: 'Test User',
+        picture: 'https://example.com/avatar.jpg',
       })
 
       expect(emailService.sendVerificationEmail).not.toHaveBeenCalled()
@@ -299,14 +307,20 @@ describe('AuthService', () => {
   })
 
   describe('refresh', () => {
-    it('returns new access token with valid refresh token', async () => {
+    it('rotates refresh token and returns new pair', async () => {
       redisService.get.mockResolvedValue('user-id-123')
       jwtService.verify.mockReturnValue({ sub: 'user-id-123', email: 'test@example.com' })
-      jwtService.sign.mockReturnValue('new-access-token')
+      userRepo.findOne.mockResolvedValue(mockUser)
+      jwtService.sign
+        .mockReturnValueOnce('new-access-token')
+        .mockReturnValueOnce('new-refresh-token')
 
       const result = await service.refresh('valid-refresh-token')
 
       expect(result.access_token).toBe('new-access-token')
+      expect(result.refresh_token).toBe('new-refresh-token')
+      expect(redisService.del).toHaveBeenCalledWith('refresh_token:valid-refresh-token')
+      expect(redisService.srem).toHaveBeenCalledWith('user_refresh_tokens:user-id-123', 'valid-refresh-token')
     })
 
     it('throws UnauthorizedException with expired refresh token', async () => {
@@ -320,17 +334,22 @@ describe('AuthService', () => {
 
       await expect(service.refresh('nonexistent-token')).rejects.toThrow(UnauthorizedException)
     })
+
+    it('throws if user no longer exists', async () => {
+      redisService.get.mockResolvedValue('user-id-123')
+      jwtService.verify.mockReturnValue({ sub: 'user-id-123', email: 'test@example.com' })
+      userRepo.findOne.mockResolvedValue(null)
+
+      await expect(service.refresh('valid-refresh-token')).rejects.toThrow(UnauthorizedException)
+    })
   })
 
   describe('logout', () => {
-    it('clears refresh token from redis', async () => {
-      redisService.get.mockResolvedValue('some-refresh-token')
-      redisService.del.mockResolvedValue()
-
-      await service.logout('user-id-123')
+    it('removes refresh token from redis set', async () => {
+      await service.logout('user-id-123', 'some-refresh-token')
 
       expect(redisService.del).toHaveBeenCalledWith('refresh_token:some-refresh-token')
-      expect(redisService.del).toHaveBeenCalledWith('user_refresh:user-id-123')
+      expect(redisService.srem).toHaveBeenCalledWith('user_refresh_tokens:user-id-123', 'some-refresh-token')
     })
   })
 
@@ -379,31 +398,6 @@ describe('AuthService', () => {
       const result = await service.verifyEmail('valid-token')
 
       expect(result.verified).toBe(true)
-    })
-  })
-
-  describe('verification guard logic', () => {
-    it('unverified email user is blocked from creating debates', () => {
-      const emailUser: User = {
-        id: 'test-uuid-123',
-        email: 'test@example.com',
-        display_name: 'Test User',
-        avatar_url: null,
-        elo_score: null,
-        verified: false,
-        auth_provider: 'email',
-        created_at: new Date(),
-        updated_at: new Date(),
-        password_hash: 'hashed-password',
-      }
-
-      expect(emailUser.verified).toBe(false)
-      expect(emailUser.auth_provider).toBe('email')
-    })
-
-    it('google user is always verified from creation', () => {
-      expect(mockGoogleUser.verified).toBe(true)
-      expect(mockGoogleUser.auth_provider).toBe('google')
     })
   })
 })

@@ -12,8 +12,8 @@ const SALT_ROUNDS = 12
 interface GooglePayload {
   sub: string
   email: string
-  name?: string
-  picture?: string
+  name: string
+  picture: string
 }
 
 @Injectable()
@@ -50,7 +50,6 @@ export class AuthService {
     try {
       await this.emailService.sendVerificationEmail(email, verifyToken)
     } catch {
-      // email failure is non-blocking — user is still registered
     }
 
     return { user: this.sanitizeUser(user) }
@@ -112,24 +111,29 @@ export class AuthService {
     try {
       payload = this.jwtService.verify(refreshToken)
     } catch {
-      await this.redisService.del(`refresh_token:${refreshToken}`)
+      await this.removeRefreshToken(refreshToken, userId)
       throw new UnauthorizedException('Invalid refresh token')
     }
 
-    const access_token = this.jwtService.sign(
-      { sub: payload.sub, email: payload.email },
-      { expiresIn: '15m' },
-    )
+    if (payload.sub !== userId) {
+      await this.removeRefreshToken(refreshToken, userId)
+      throw new UnauthorizedException('Invalid refresh token')
+    }
 
-    return { access_token }
+    const user = await this.userRepo.findOne({ where: { id: userId } })
+    if (!user) {
+      await this.removeRefreshToken(refreshToken, userId)
+      throw new UnauthorizedException('Invalid refresh token')
+    }
+
+    await this.removeRefreshToken(refreshToken, userId)
+
+    const newTokens = await this.generateTokenResponse(user)
+    return { access_token: newTokens.access_token, refresh_token: newTokens.refresh_token }
   }
 
-  async logout(userId: string) {
-    const refreshToken = await this.redisService.get(`user_refresh:${userId}`)
-    if (refreshToken) {
-      await this.redisService.del(`refresh_token:${refreshToken}`)
-      await this.redisService.del(`user_refresh:${userId}`)
-    }
+  async logout(userId: string, refreshToken: string) {
+    await this.removeRefreshToken(refreshToken, userId)
   }
 
   async verifyEmail(token: string) {
@@ -141,7 +145,7 @@ export class AuthService {
     }
 
     if (payload.purpose !== 'email_verification') {
-      throw new UnauthorizedException('Invalid token')
+      throw new UnauthorizedException('Invalid token purpose')
     }
 
     await this.userRepo.update({ id: payload.uid }, { verified: true })
@@ -155,13 +159,18 @@ export class AuthService {
     const refresh_token = this.jwtService.sign(payload, { expiresIn: '30d' })
 
     await this.redisService.set(`refresh_token:${refresh_token}`, user.id, 30 * 24 * 60 * 60)
-    await this.redisService.set(`user_refresh:${user.id}`, refresh_token, 30 * 24 * 60 * 60)
+    await this.redisService.sadd(`user_refresh_tokens:${user.id}`, refresh_token)
 
     return {
       access_token,
       refresh_token,
       user: this.sanitizeUser(user),
     }
+  }
+
+  private async removeRefreshToken(refreshToken: string, userId: string) {
+    await this.redisService.del(`refresh_token:${refreshToken}`)
+    await this.redisService.srem(`user_refresh_tokens:${userId}`, refreshToken)
   }
 
   private sanitizeUser(user: User) {

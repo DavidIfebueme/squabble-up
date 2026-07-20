@@ -47,6 +47,31 @@ export class RedisService implements OnModuleDestroy {
     }
   }
 
+  async sadd(key: string, ...members: string[]): Promise<void> {
+    try {
+      await this.client.sadd(key, ...members)
+    } catch (err) {
+      this.logger.error(`Redis SADD failed for key: ${key}`, err)
+    }
+  }
+
+  async srem(key: string, ...members: string[]): Promise<void> {
+    try {
+      await this.client.srem(key, ...members)
+    } catch (err) {
+      this.logger.error(`Redis SREM failed for key: ${key}`, err)
+    }
+  }
+
+  async smembers(key: string): Promise<string[]> {
+    try {
+      return await this.client.smembers(key)
+    } catch (err) {
+      this.logger.error(`Redis SMEMBERS failed for key: ${key}`, err)
+      return []
+    }
+  }
+
   async onModuleDestroy() {
     await this.client.quit()
   }
