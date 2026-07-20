@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import HomeScreen from './src/screens/HomeScreen'
 import DebateScreen from './src/screens/DebateScreen'
+import DebateLobbyScreen from './src/screens/DebateLobbyScreen'
 import CreateDebateScreen from './src/screens/CreateDebateScreen'
 import ProfileScreen from './src/screens/ProfileScreen'
 import GuestDebateScreen from './src/screens/GuestDebateScreen'
@@ -30,6 +31,7 @@ export default function App() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main" component={HomeTabs} />
         <Stack.Screen name="CreateDebate" component={CreateDebateScreen} />
+        <Stack.Screen name="DebateLobby" component={DebateLobbyScreen} />
         <Stack.Screen name="GuestDebate" component={GuestDebateScreen} />
         <Stack.Screen name="Scoring" component={ScoringScreen} />
         <Stack.Screen name="Auth" component={AuthScreen} />
