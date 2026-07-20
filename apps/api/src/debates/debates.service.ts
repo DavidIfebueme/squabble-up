@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { v4 as uuid } from 'uuid'
@@ -25,6 +25,27 @@ export class DebatesService {
       take: limit,
       order: { created_at: 'DESC' },
     })
+    return { success: true, data, page, limit, total, has_more: page * limit < total }
+  }
+
+  async findOpen(page = 1, limit = 20) {
+    const [data, total] = await this.debateRepo.findAndCount({
+      where: { status: 'pending' as const },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { created_at: 'DESC' },
+    })
+    return { success: true, data, page, limit, total, has_more: page * limit < total }
+  }
+
+  async findMy(userId: string, page = 1, limit = 20) {
+    const qb = this.debateRepo.createQueryBuilder('debate')
+      .where('debate.creator_id = :userId OR debate.opponent_id = :userId', { userId })
+      .orderBy('debate.created_at', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+
+    const [data, total] = await qb.getManyAndCount()
     return { success: true, data, page, limit, total, has_more: page * limit < total }
   }
 
@@ -58,6 +79,9 @@ export class DebatesService {
     if (debate.status !== 'pending') throw new BadRequestException('Debate is not open for joining')
 
     if (userId) {
+      if (debate.creator_id === userId || debate.opponent_id === userId) {
+        throw new BadRequestException('Already a participant in this debate')
+      }
       if (!debate.creator_id) debate.creator_id = userId
       else if (!debate.opponent_id) debate.opponent_id = userId
       else throw new BadRequestException('Debate is full')
@@ -77,7 +101,10 @@ export class DebatesService {
   async start(debateId: string) {
     const debate = await this.debateRepo.findOneBy({ id: debateId })
     if (!debate) throw new NotFoundException('Debate not found')
-    if (!debate.creator_id || !debate.opponent_id) throw new BadRequestException('Both participants required')
+    if (debate.status !== 'pending') throw new BadRequestException('Debate is not in pending state')
+    if (!debate.creator_id || !debate.opponent_id) {
+      throw new BadRequestException('Both participants required to start')
+    }
     debate.status = 'active'
     await this.debateRepo.save(debate)
     return { success: true, data: debate }
@@ -86,14 +113,25 @@ export class DebatesService {
   async complete(debateId: string) {
     const debate = await this.debateRepo.findOneBy({ id: debateId })
     if (!debate) throw new NotFoundException('Debate not found')
+    if (debate.status !== 'active') throw new BadRequestException('Debate is not active')
     debate.status = 'completed'
     debate.completed_at = new Date()
     await this.debateRepo.save(debate)
     return { success: true, data: debate }
   }
 
-  async abandon(debateId: string) {
-    await this.debateRepo.update({ id: debateId }, { status: 'abandoned' })
+  async abandon(debateId: string, userId: string) {
+    const debate = await this.debateRepo.findOneBy({ id: debateId })
+    if (!debate) throw new NotFoundException('Debate not found')
+    if (debate.status !== 'pending' && debate.status !== 'active') {
+      throw new BadRequestException('Debate cannot be abandoned in current state')
+    }
+    if (debate.creator_id !== userId && debate.opponent_id !== userId) {
+      throw new ForbiddenException('Only participants can abandon a debate')
+    }
+    debate.status = 'abandoned'
+    await this.debateRepo.save(debate)
+    return { success: true, data: debate }
   }
 
   async setScoringFailed(debateId: string) {
