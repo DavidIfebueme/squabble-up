@@ -13,10 +13,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.squabbleup.mobile",
-      "infoPlist": {
-        "UIBackgroundModes": ["audio"]
-      }
+      "bundleIdentifier": "app.squabbleup.mobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -32,6 +29,11 @@
         }
       ]
     },
-    "plugins": ["expo-av"]
+    "plugins": [
+      ["expo-speech-recognition", {
+        "microphonePermission": "Allow Squabble Up to access your microphone for recording",
+        "speechRecognitionPermission": "Allow Squabble Up to recognize your speech for transcription"
+      }]
+    ]
   }
 }

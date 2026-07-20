@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import HomeScreen from './src/screens/HomeScreen'
 import DebateScreen from './src/screens/DebateScreen'
 import DebateLobbyScreen from './src/screens/DebateLobbyScreen'
+import DebateRoundScreen, { type RootStackParamList } from './src/screens/DebateRoundScreen'
 import CreateDebateScreen from './src/screens/CreateDebateScreen'
 import ProfileScreen from './src/screens/ProfileScreen'
 import GuestDebateScreen from './src/screens/GuestDebateScreen'
@@ -12,7 +13,17 @@ import ScoringScreen from './src/screens/ScoringScreen'
 import AuthScreen from './src/screens/AuthScreen'
 
 const Tab = createBottomTabNavigator()
-const Stack = createNativeStackNavigator()
+
+type AppStackParamList = RootStackParamList & {
+  Main: undefined
+  CreateDebate: undefined
+  DebateLobby: { debateId: string; side?: string }
+  GuestDebate: undefined
+  Scoring: undefined
+  Auth: undefined
+}
+
+const Stack = createNativeStackNavigator<AppStackParamList>()
 
 function HomeTabs() {
   return (
@@ -32,6 +43,7 @@ export default function App() {
         <Stack.Screen name="Main" component={HomeTabs} />
         <Stack.Screen name="CreateDebate" component={CreateDebateScreen} />
         <Stack.Screen name="DebateLobby" component={DebateLobbyScreen} />
+        <Stack.Screen name="DebateRound" component={DebateRoundScreen} />
         <Stack.Screen name="GuestDebate" component={GuestDebateScreen} />
         <Stack.Screen name="Scoring" component={ScoringScreen} />
         <Stack.Screen name="Auth" component={AuthScreen} />

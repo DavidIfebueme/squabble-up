@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, Switch } from 'react-native'
 import type { Topic } from '@squabble-up/shared'
 import { getTopics } from '../lib/topics'
 import { createDebate } from '../lib/debates'
@@ -25,6 +25,7 @@ export default function CreateDebateScreen({ navigation }: any) {
   const [query, setQuery] = useState('')
   const [topics, setTopics] = useState<Topic[]>([])
   const [side, setSide] = useState<Side | null>(null)
+  const [communityVoting, setCommunityVoting] = useState(false)
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function CreateDebateScreen({ navigation }: any) {
       const result = await createDebate({
         topic_id: selectedTopic.id,
         participant_role: side ?? 'creator',
+        community_voting: communityVoting,
       })
       if (result.success) {
         navigation.replace('DebateLobby', { debateId: result.data.debate.id, side: side ?? 'creator' })
@@ -120,6 +122,21 @@ export default function CreateDebateScreen({ navigation }: any) {
           <Text style={[styles.sideLabel, side === 'opponent' && styles.sideLabelSelected]}>AGAINST</Text>
           <Text style={styles.sideDesc}>You argue against</Text>
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.votingToggle}>
+        <View style={styles.votingToggleRow}>
+          <View style={styles.votingToggleInfo}>
+            <Text style={styles.votingToggleLabel}>Let the community vote?</Text>
+            <Text style={styles.votingToggleDesc}>Community votes add 30% weight to the final score.</Text>
+          </View>
+          <Switch
+            value={communityVoting}
+            onValueChange={setCommunityVoting}
+            trackColor={{ false: COLORS.borderSubtle, true: COLORS.accentAmber }}
+            thumbColor={communityVoting ? COLORS.bgPrimary : COLORS.textMuted}
+          />
+        </View>
       </View>
 
       <View style={styles.timerInfo}>
@@ -201,6 +218,11 @@ const styles = StyleSheet.create({
   timerInfo: { backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginTop: 12 },
   timerLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 4 },
   timerValue: { fontSize: 14, color: COLORS.textMuted },
+  votingToggle: { backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginBottom: 12 },
+  votingToggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  votingToggleInfo: { flex: 1, marginRight: 12 },
+  votingToggleLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textPrimary },
+  votingToggleDesc: { fontSize: 12, color: COLORS.textMuted, marginTop: 4 },
   bottomBar: { padding: 16, borderTopWidth: 1, borderTopColor: COLORS.borderSubtle },
   continueButton: { backgroundColor: COLORS.accentAmber, padding: 16, borderRadius: 12, alignItems: 'center', height: 48, justifyContent: 'center' },
   continueButtonDisabled: { opacity: 0.5 },
