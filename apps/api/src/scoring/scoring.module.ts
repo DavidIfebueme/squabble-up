@@ -4,6 +4,7 @@ import { HttpModule } from '@nestjs/axios'
 import { ScoringService } from './scoring.service'
 import { ScoringProcessor } from './scoring.processor'
 import { GeminiService } from './gemini.service'
+import { ContentFilterService } from './content-filter.service'
 import { VotesModule } from '../votes/votes.module'
 import { DebatesModule } from '../debates/debates.module'
 import { UsersModule } from '../users/users.module'
@@ -22,7 +23,7 @@ export const SCORING_QUEUE = 'scoring'
     RoundsModule,
     TopicsModule,
   ],
-  providers: [ScoringService, ScoringProcessor, GeminiService],
+  providers: [ScoringService, ScoringProcessor, GeminiService, ContentFilterService],
   exports: [ScoringService],
 })
 export class ScoringModule {}

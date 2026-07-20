@@ -7,6 +7,7 @@ import { UsersService } from '../users/users.service'
 import { RoundsService } from '../rounds/rounds.service'
 import { TopicsService } from '../topics/topics.service'
 import { GeminiService } from './gemini.service'
+import { ContentFilterService } from './content-filter.service'
 import { COMMUNITY_WEIGHT, AI_WEIGHT } from '@squabble-up/shared'
 
 @Processor(SCORING_QUEUE)
@@ -18,6 +19,7 @@ export class ScoringProcessor extends WorkerHost {
     private readonly roundsService: RoundsService,
     private readonly topicsService: TopicsService,
     private readonly geminiService: GeminiService,
+    private readonly contentFilter: ContentFilterService,
   ) {
     super()
   }
@@ -34,6 +36,7 @@ export class ScoringProcessor extends WorkerHost {
       const topicResult = await this.topicsService.findById(debate.topic_id)
       if (!topicResult.data) return
 
+
       const roundsResult = await this.roundsService.findByDebate(debateId)
       const rounds = roundsResult.data
       if (!rounds || rounds.length < 6) return
@@ -41,6 +44,19 @@ export class ScoringProcessor extends WorkerHost {
       const creatorId = debate.creator_id
       const opponentId = debate.opponent_id
       if (!creatorId || !opponentId) return
+
+      for (const round of rounds) {
+        if (round.transcription) {
+          const result = this.contentFilter.filter(round.transcription)
+          if (result.flagged) {
+            await this.debatesService.setScoringFailed(debateId)
+            return
+          }
+        }
+      }
+
+      const topicResult = await this.topicsService.findById(debate.topic_id)
+      const topic = topicResult.data
 
       const transcripts = rounds.map(r => ({
         round_number: r.round_number,
