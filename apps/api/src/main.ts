@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import cookieParser from 'cookie-parser'
 import { AppModule } from './app.module'
+import { GlobalExceptionFilter } from './common/global-exception.filter'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
@@ -17,6 +18,7 @@ async function bootstrap() {
       transform: true,
     }),
   )
+  app.useGlobalFilters(new GlobalExceptionFilter())
 
   const config = new DocumentBuilder()
     .setTitle('Squabble Up API')
