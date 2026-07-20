@@ -217,13 +217,25 @@ describe('TopicsService', () => {
       ).rejects.toThrow(NotFoundException)
     })
 
-    it('throws ConflictException for duplicate slug', async () => {
+    it('throws ConflictException for duplicate slug within same topic', async () => {
       topicRepo.findOneBy.mockResolvedValue(mockTopic)
       subtopicRepo.findOneBy.mockResolvedValue(mockSubtopic)
 
       await expect(
         service.createSubtopic('topic-uuid-1', { name: 'Carbon Tax' })
       ).rejects.toThrow(ConflictException)
+    })
+
+    it('allows same subtopic name under different topics', async () => {
+      topicRepo.findOneBy.mockResolvedValue(mockTopic)
+      subtopicRepo.findOneBy.mockResolvedValue(null)
+      subtopicRepo.create.mockReturnValue(mockSubtopic)
+      subtopicRepo.save.mockResolvedValue(mockSubtopic)
+
+      const result = await service.createSubtopic('topic-uuid-2', { name: 'Carbon Tax' })
+
+      expect(result.success).toBe(true)
+      expect(subtopicRepo.findOneBy).toHaveBeenCalledWith({ slug: 'carbon-tax', topic_id: 'topic-uuid-2' })
     })
   })
 

@@ -8,7 +8,7 @@ export class Subtopic {
   @Column()
   name: string
 
-  @Column({ unique: true })
+  @Column()
   slug: string
 
   @Column()

@@ -74,9 +74,9 @@ export class TopicsService {
 
     const slug = this.generateSlug(data.name)
 
-    const existing = await this.subtopicRepo.findOneBy({ slug })
+    const existing = await this.subtopicRepo.findOneBy({ slug, topic_id: topicId })
     if (existing) {
-      throw new ConflictException('Subtopic with this name already exists')
+      throw new ConflictException('Subtopic with this name already exists in this topic')
     }
 
     const subtopic = this.subtopicRepo.create({ ...data, slug, topic_id: topicId })
