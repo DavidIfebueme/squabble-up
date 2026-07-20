@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Topic } from './topic.entity'
@@ -28,19 +28,39 @@ export class TopicsService {
     }
   }
 
+  async findBySlug(slug: string) {
+    const topic = await this.topicRepo.findOneBy({ slug })
+    if (!topic) throw new NotFoundException('Topic not found')
+    return { success: true, data: topic }
+  }
+
   async findById(id: string) {
     const topic = await this.topicRepo.findOneBy({ id })
     if (!topic) throw new NotFoundException('Topic not found')
     return { success: true, data: topic }
   }
 
-  async create(data: Pick<Topic, 'title' | 'description' | 'category'>) {
-    const topic = this.topicRepo.create(data)
+  async create(data: { title: string; description: string; category: string; created_by?: string }) {
+    const slug = this.generateSlug(data.title)
+
+    const existing = await this.topicRepo.findOneBy({ slug })
+    if (existing) {
+      throw new ConflictException('Topic with this title already exists')
+    }
+
+    const topic = this.topicRepo.create({ ...data, slug })
     await this.topicRepo.save(topic)
     return { success: true, data: topic }
   }
 
   async incrementDebateCount(topicId: string) {
     await this.topicRepo.increment({ id: topicId }, 'debate_count', 1)
+  }
+
+  private generateSlug(title: string): string {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
   }
 }

@@ -1,35 +1,108 @@
-import { useState } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native'
+import { useState, useEffect } from 'react'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native'
+import type { Topic } from '@squabble-up/shared'
+import { getTopics } from '../lib/topics'
+
+const COLORS = {
+  bgPrimary: '#1E1E1E',
+  bgSurface: '#2A2A2A',
+  bgElevated: '#333333',
+  accentAmber: '#D4953A',
+  textPrimary: '#F5F0E8',
+  textSecondary: '#A0998F',
+  textMuted: '#6B6560',
+  borderSubtle: '#3A3A3A',
+}
 
 export default function CreateDebateScreen({ navigation }: any) {
-  const [topic, setTopic] = useState('')
+  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
+  const [query, setQuery] = useState('')
+  const [topics, setTopics] = useState<Topic[]>([])
+
+  useEffect(() => {
+    getTopics({ limit: 20 }).then(result => {
+      if (result.success && result.data) setTopics(result.data)
+    })
+  }, [])
+
+  const filtered = query
+    ? topics.filter(t => t.title.toLowerCase().includes(query.toLowerCase()))
+    : topics
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Create Debate</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter debate topic..."
-        placeholderTextColor="#64748B"
-        value={topic}
-        onChangeText={setTopic}
-      />
-      <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-        <Text style={styles.buttonText}>Start Debate</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.secondaryButtonText}>Join Existing Debate</Text>
-      </TouchableOpacity>
+      <View style={styles.topBar}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.topBarTitle}>New Debate</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <View style={styles.content}>
+        <Text style={styles.heading}>What do you want to debate?</Text>
+
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search topics..."
+          placeholderTextColor={COLORS.textMuted}
+          value={query}
+          onChangeText={setQuery}
+        />
+
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[styles.topicRow, selectedTopic?.id === item.id && styles.topicRowSelected]}
+              onPress={() => setSelectedTopic(item)}
+            >
+              <View style={styles.topicInfo}>
+                <Text style={styles.topicTitle}>{item.title}</Text>
+                <Text style={styles.topicMeta}>{item.category} · {item.debate_count} debates</Text>
+              </View>
+              {selectedTopic?.id === item.id && <Text style={styles.checkmark}>✓</Text>}
+            </TouchableOpacity>
+          )}
+          ListEmptyComponent={
+            <Text style={styles.emptyText}>No topics found.</Text>
+          }
+        />
+      </View>
+
+      {selectedTopic && (
+        <View style={styles.bottomBar}>
+          <Text style={styles.selectedLabel}>Selected: {selectedTopic.title}</Text>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.startButtonText}>Start Debate</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A', padding: 16 },
-  header: { fontSize: 24, fontWeight: '800', color: '#F8FAFC', marginTop: 48, marginBottom: 24 },
-  input: { backgroundColor: '#1E293B', color: '#F1F5F9', padding: 16, borderRadius: 12, fontSize: 16, marginBottom: 16 },
-  button: { backgroundColor: '#3B82F6', padding: 16, borderRadius: 12, alignItems: 'center', marginBottom: 12 },
-  buttonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
-  secondaryButton: { padding: 16, borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: '#334155' },
-  secondaryButtonText: { color: '#94A3B8', fontWeight: '600', fontSize: 16 },
+  container: { flex: 1, backgroundColor: COLORS.bgPrimary },
+  topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.bgElevated, paddingHorizontal: 16, paddingTop: 48, paddingBottom: 12, height: 56 },
+  topBarTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary },
+  backArrow: { fontSize: 24, color: COLORS.textPrimary },
+  content: { flex: 1, padding: 16 },
+  heading: { fontFamily: 'serif', fontSize: 22, color: COLORS.textPrimary, marginBottom: 16 },
+  searchInput: { backgroundColor: COLORS.bgSurface, color: COLORS.textPrimary, padding: 16, borderRadius: 12, fontSize: 16, marginBottom: 16 },
+  topicRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginBottom: 8 },
+  topicRowSelected: { borderWidth: 2, borderColor: COLORS.accentAmber },
+  topicInfo: { flex: 1 },
+  topicTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
+  topicMeta: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
+  checkmark: { color: COLORS.accentAmber, fontSize: 20, fontWeight: '700' },
+  emptyText: { color: COLORS.textSecondary, textAlign: 'center', marginTop: 32 },
+  bottomBar: { padding: 16, borderTopWidth: 1, borderTopColor: COLORS.borderSubtle },
+  selectedLabel: { color: COLORS.textSecondary, fontSize: 14, marginBottom: 12 },
+  startButton: { backgroundColor: COLORS.accentAmber, padding: 16, borderRadius: 12, alignItems: 'center', height: 48, justifyContent: 'center' },
+  startButtonText: { color: COLORS.bgPrimary, fontWeight: '700', fontSize: 16 },
 })

@@ -67,6 +67,7 @@ export interface Comment {
 export interface Topic {
   id: string
   title: string
+  slug: string
   description: string
   category: string
   created_by: string | null
