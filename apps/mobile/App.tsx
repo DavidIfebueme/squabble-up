@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar'
-import { ActivityIndicator, View } from 'react-native'
+import { ActivityIndicator, View, Linking } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
@@ -21,6 +21,17 @@ const Tab = createBottomTabNavigator()
 export type AppStackParamList = RootStackParamList
 
 const Stack = createNativeStackNavigator<AppStackParamList>()
+
+const linking = {
+  prefixes: ['squabbleup://'],
+  config: {
+    screens: {
+      DebateLobby: 'debate/:debateId',
+      Scoring: 'debate/:debateId/results',
+      DebateRound: 'debate/:debateId/round/:roundNumber',
+    },
+  },
+}
 
 function HomeTabs() {
   return (
@@ -44,7 +55,7 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <StatusBar style="auto" />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main" component={HomeTabs} />
