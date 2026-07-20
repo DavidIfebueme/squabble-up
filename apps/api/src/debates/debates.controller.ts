@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards, Request, ParseUUIDPipe } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger'
 import { DebatesService } from './debates.service'
+import { ScoringService } from '../scoring/scoring.service'
 import { CreateDebateDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard'
@@ -8,7 +9,10 @@ import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard'
 @ApiTags('debates')
 @Controller('debates')
 export class DebatesController {
-  constructor(private readonly debatesService: DebatesService) {}
+  constructor(
+    private readonly debatesService: DebatesService,
+    private readonly scoringService: ScoringService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'List debates with optional status filter' })
@@ -102,5 +106,15 @@ export class DebatesController {
   @ApiResponse({ status: 200, description: 'Heartbeat acknowledged' })
   async heartbeat() {
     return { success: true, timestamp: new Date().toISOString() }
+  }
+
+  @Post(':id/score')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Trigger AI scoring for a debate' })
+  @ApiParam({ name: 'id', description: 'Debate UUID' })
+  @ApiResponse({ status: 200, description: 'Scoring triggered' })
+  @ApiResponse({ status: 400, description: 'Debate not ready for scoring' })
+  async score(@Param('id', ParseUUIDPipe) id: string) {
+    return this.scoringService.triggerScoring(id)
   }
 }
