@@ -4,6 +4,9 @@ import { SCORING_QUEUE } from './scoring.module'
 import { VotesService } from '../votes/votes.service'
 import { DebatesService } from '../debates/debates.service'
 import { UsersService } from '../users/users.service'
+import { RoundsService } from '../rounds/rounds.service'
+import { TopicsService } from '../topics/topics.service'
+import { GeminiService } from './gemini.service'
 import { COMMUNITY_WEIGHT, AI_WEIGHT } from '@squabble-up/shared'
 
 @Processor(SCORING_QUEUE)
@@ -12,6 +15,9 @@ export class ScoringProcessor extends WorkerHost {
     private readonly votesService: VotesService,
     private readonly debatesService: DebatesService,
     private readonly usersService: UsersService,
+    private readonly roundsService: RoundsService,
+    private readonly topicsService: TopicsService,
+    private readonly geminiService: GeminiService,
   ) {
     super()
   }
@@ -20,18 +26,41 @@ export class ScoringProcessor extends WorkerHost {
     const { debateId } = job.data
 
     try {
-      const scores = await this.votesService.getAggregateScores(debateId)
-      const aiScores = await this.runAiScoring(debateId)
+      const aggregateScores = await this.votesService.getAggregateScores(debateId)
+      const debateResult = await this.debatesService.findById(debateId)
+      const debate = debateResult.data
+      if (!debate) return
 
-      const finalCreator = scores.creator * COMMUNITY_WEIGHT + aiScores.creator * AI_WEIGHT
-      const finalOpponent = scores.opponent * COMMUNITY_WEIGHT + aiScores.opponent * AI_WEIGHT
+      const topicResult = await this.topicsService.findById(debate.topic_id)
+      const topic = topicResult.data
 
-      const debate = await this.debatesService.findById(debateId)
-      const d = debate.data
-      if (!d) return
+      const roundsResult = await this.roundsService.findByDebate(debateId)
+      const rounds = roundsResult.data
 
-      const winnerId = finalCreator >= finalOpponent ? d.creator_id! : d.opponent_id!
-      const loserId = winnerId === d.creator_id ? d.opponent_id : d.creator_id
+      const transcripts = rounds.map(r => ({
+        round_number: r.round_number,
+        speaker_id: r.speaker_id,
+        transcription: r.transcription || '',
+      }))
+
+      const aiScores = await this.geminiService.scoreDebate(topic.title, transcripts)
+
+      const creatorAi = (aiScores.creator.logic + aiScores.creator.persuasiveness + aiScores.creator.evidence + aiScores.creator.delivery) / 4
+      const opponentAi = (aiScores.opponent.logic + aiScores.opponent.persuasiveness + aiScores.opponent.evidence + aiScores.opponent.delivery) / 4
+
+      let finalCreator: number
+      let finalOpponent: number
+
+      if (aggregateScores) {
+        finalCreator = aggregateScores.creator * COMMUNITY_WEIGHT + creatorAi * AI_WEIGHT
+        finalOpponent = aggregateScores.opponent * COMMUNITY_WEIGHT + opponentAi * AI_WEIGHT
+      } else {
+        finalCreator = creatorAi
+        finalOpponent = opponentAi
+      }
+
+      const winnerId = finalCreator >= finalOpponent ? debate.creator_id! : debate.opponent_id!
+      const loserId = winnerId === debate.creator_id ? debate.opponent_id : debate.creator_id
 
       await this.debatesService.setWinner(debateId, winnerId)
       await this.debatesService.complete(debateId)
@@ -43,9 +72,5 @@ export class ScoringProcessor extends WorkerHost {
       await this.debatesService.setScoringFailed(debateId)
       throw job
     }
-  }
-
-  private async runAiScoring(_debateId: string) {
-    return { creator: 5, opponent: 5 }
   }
 }

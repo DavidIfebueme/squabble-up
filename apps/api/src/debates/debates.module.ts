@@ -6,9 +6,10 @@ import { Debate } from './debate.entity'
 import { GuestSession } from './guest-session.entity'
 import { TopicsModule } from '../topics/topics.module'
 import { RealtimeModule } from '../realtime/realtime.module'
+import { ScoringModule } from '../scoring/scoring.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Debate, GuestSession]), TopicsModule, RealtimeModule],
+  imports: [TypeOrmModule.forFeature([Debate, GuestSession]), TopicsModule, RealtimeModule, ScoringModule],
   controllers: [DebatesController],
   providers: [DebatesService],
   exports: [DebatesService],
