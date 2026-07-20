@@ -30,3 +30,8 @@ export async function triggerScoring(id: string) {
   const { data } = await api.post<{ success: boolean; data: { job_id: string } }>(`/debates/${id}/score`)
   return data
 }
+
+export async function getScorecard(id: string) {
+  const { data } = await api.get<{ success: boolean; data: any }>(`/debates/${id}/scorecard`)
+  return data
+}
