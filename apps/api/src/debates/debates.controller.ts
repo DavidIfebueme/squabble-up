@@ -94,4 +94,13 @@ export class DebatesController {
   async abandon(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
     return this.debatesService.abandon(id, req.user.id)
   }
+
+  @Post(':id/heartbeat')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Send heartbeat to indicate presence' })
+  @ApiParam({ name: 'id', description: 'Debate UUID' })
+  @ApiResponse({ status: 200, description: 'Heartbeat acknowledged' })
+  async heartbeat() {
+    return { success: true, timestamp: new Date().toISOString() }
+  }
 }

@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import VoiceRecorder from '../components/VoiceRecorder'
-import { createRound, updateRound, getRoundsByDebate } from '../lib/rounds'
+import { createRound, updateRound } from '../lib/rounds'
 import { getDebate } from '../lib/debates'
+import { joinDebateRoom, leaveDebateRoom, onDebateEvent } from '../lib/socket'
 import { ROUND_DURATIONS, ROUND_NUMBER_TO_TYPE } from '@squabble-up/shared'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
 export type RootStackParamList = {
   DebateRound: { debateId: string; roundNumber: number; side: 'creator' | 'opponent' }
   DebateLobby: { debateId: string; side?: string }
+  Scoring: { debateId: string }
 }
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DebateRound'>
@@ -31,14 +33,14 @@ const ROUND_LABELS: Record<number, { name: string; prompt: string }> = {
 }
 
 export default function DebateRoundScreen({ route, navigation }: Props) {
-  const { debateId, roundNumber, side } = route.params
+  const { debateId, roundNumber } = route.params
   const label = ROUND_LABELS[roundNumber as keyof typeof ROUND_LABELS] ?? { name: 'Round', prompt: '' }
   const roundType = ROUND_NUMBER_TO_TYPE[roundNumber as keyof typeof ROUND_NUMBER_TO_TYPE]
   const duration = roundType ? ROUND_DURATIONS[roundType] : 90
   const [opponentStatus, setOpponentStatus] = useState<'waiting' | 'recording' | 'done'>('waiting')
   const [roundId, setRoundId] = useState<string | null>(null)
   const [creating, setCreating] = useState(true)
-  const [opponentId, setOpponentId] = useState<string | null>(null)
+  const [opponentDisconnected, setOpponentDisconnected] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -50,9 +52,6 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
           navigation.goBack()
           return
         }
-        const oppId = side === 'creator' ? result.data.opponent_id : result.data.creator_id
-        if (cancelled) return
-        setOpponentId(oppId)
 
         try {
           const roundResult = await createRound(debateId, roundNumber)
@@ -76,25 +75,39 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
     }
     init()
     return () => { cancelled = true }
-  }, [debateId, roundNumber, side, navigation])
+  }, [debateId, roundNumber, navigation])
 
   useEffect(() => {
-    if (!opponentId) return
-    const interval = setInterval(async () => {
-      try {
-        const result = await getRoundsByDebate(debateId)
-        if (result.success) {
-          const opponentRound = result.data.find(
-            r => r.round_number === roundNumber && r.speaker_id === opponentId
-          )
-          setOpponentStatus(opponentRound ? 'done' : 'waiting')
-        }
-      } catch {
-        // Network error — keep current status
+    joinDebateRoom(debateId)
+    return () => { leaveDebateRoom(debateId) }
+  }, [debateId])
+
+  useEffect(() => {
+    const cleanup1 = onDebateEvent('round-started', (data: any) => {
+      if (data.payload?.round_number === roundNumber && data.payload?.speaker_id !== undefined) {
+        setOpponentStatus('recording')
       }
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [debateId, roundNumber, opponentId])
+    })
+    const cleanup2 = onDebateEvent('round-submitted', (data: any) => {
+      if (data.payload?.round_number === roundNumber) {
+        setOpponentStatus('done')
+      }
+    })
+    const cleanup3 = onDebateEvent('opponent-disconnected', () => {
+      setOpponentDisconnected(true)
+      Alert.alert('Opponent Disconnected', 'Waiting for them to return...')
+    })
+    const cleanup4 = onDebateEvent('debate-completed', () => {
+      navigation.replace('Scoring', { debateId })
+    })
+
+    return () => {
+      cleanup1()
+      cleanup2()
+      cleanup3()
+      cleanup4()
+    }
+  }, [debateId, roundNumber, navigation])
 
   const handleRecordComplete = useCallback(async ({ transcription, duration: recordedDuration }: { transcription: string; duration: number }) => {
     if (!roundId) {
@@ -128,7 +141,9 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
 
       <View style={styles.opponentStatus}>
         <Text style={styles.opponentLabel}>
-          Opponent: {opponentStatus === 'done' ? 'Done' : 'Waiting...'}
+          {opponentDisconnected
+            ? 'Opponent disconnected. Waiting...'
+            : opponentStatus === 'done' ? 'Opponent: Done' : 'Opponent: Waiting...'}
         </Text>
       </View>
 
