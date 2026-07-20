@@ -8,6 +8,8 @@ import { AuthService } from './auth.service'
 import { JwtStrategy } from './jwt.strategy'
 import { OptionalJwtStrategy } from './optional-jwt.strategy'
 import { User } from '../users/user.entity'
+import { EmailModule } from '../email/email.module'
+import { RedisModule } from '../redis/redis.module'
 
 @Module({
   imports: [
@@ -17,10 +19,11 @@ import { User } from '../users/user.entity'
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '7d' },
       }),
     }),
     TypeOrmModule.forFeature([User]),
+    EmailModule,
+    RedisModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, OptionalJwtStrategy],

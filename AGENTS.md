@@ -54,6 +54,18 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 6. Happy + Unhappy Paths
+
+**Every function handles both success and failure. No silent drops.**
+
+- Never leave error responses vague — always return actionable messages.
+- Validate inputs at the boundary (controllers/DTOs), not deep in services.
+- Test both paths: what happens when it works, and what happens when it doesn't.
+- For external calls (email, redis, DB), handle timeouts, connection failures, and unexpected responses.
+- Never catch errors and return `null` or `undefined` — throw or return a typed error.
+
+Ask yourself: "What breaks first, and does the caller know why?" If no, handle it.
+
 ## 5. Git Workflow — No Direct Pushes to Main
 
 **Always work on feature branches. Always open PRs.**
