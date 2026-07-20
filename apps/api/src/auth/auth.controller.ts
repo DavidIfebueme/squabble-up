@@ -1,15 +1,10 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common'
+import { Controller, Post, Body, HttpCode, HttpStatus, Req, Res } from '@nestjs/common'
+import { Response } from 'express'
 import { AuthService } from './auth.service'
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
-
-  @Post('google')
-  @HttpCode(HttpStatus.OK)
-  async googleAuth(@Body() body: { idToken: string }) {
-    return this.authService.verifyGoogleToken(body.idToken)
-  }
 
   @Post('register')
   async register(@Body() body: { email: string; password: string; display_name: string }) {
@@ -18,8 +13,57 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: { email: string; password: string }) {
-    return this.authService.login(body.email, body.password)
+  async login(
+    @Body() body: { email: string; password: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.login(body.email, body.password)
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: '/api/v1/auth',
+    })
+    return { access_token: result.access_token, user: result.user }
+  }
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  async googleAuth(
+    @Body() body: { sub: string; email: string; name?: string; picture?: string },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.googleAuth(body)
+    res.cookie('refresh_token', result.refresh_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: '/api/v1/auth',
+    })
+    return { access_token: result.access_token, user: result.user }
+  }
+
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  async refresh(@Req() req: any) {
+    const refreshToken = req.cookies?.refresh_token
+    if (!refreshToken) {
+      return { access_token: null }
+    }
+    return this.authService.refresh(refreshToken)
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Req() req: any, @Res({ passthrough: true }) res: Response) {
+    const userId = req.user?.id
+    if (userId) {
+      await this.authService.logout(userId)
+    }
+    res.clearCookie('refresh_token', { path: '/api/v1/auth' })
+    return { success: true }
   }
 
   @Post('verify-email')

@@ -8,6 +8,8 @@ import { AuthService } from './auth.service'
 import { JwtStrategy } from './jwt.strategy'
 import { OptionalJwtStrategy } from './optional-jwt.strategy'
 import { User } from '../users/user.entity'
+import { EmailModule } from '../email/email.module'
+import { RedisModule } from '../redis/redis.module'
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { User } from '../users/user.entity'
       }),
     }),
     TypeOrmModule.forFeature([User]),
+    EmailModule,
+    RedisModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, OptionalJwtStrategy],
