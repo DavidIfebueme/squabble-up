@@ -5,7 +5,7 @@ export type RootStackParamList = {
   Debates: undefined
   Profile: undefined
   Main: undefined
-  CreateDebate: undefined
+  CreateDebate: { guestName?: string } | undefined
   DebateLobby: { debateId: string; side?: string }
   DebateRound: { debateId: string; roundNumber: number; side: 'creator' | 'opponent' }
   GuestDebate: undefined
