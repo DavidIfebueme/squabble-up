@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { v4 as uuid } from 'uuid'
@@ -10,7 +10,7 @@ import { GUEST_SESSION_TTL_HOURS } from '@squabble-up/shared'
 const DEBATE_TIMEOUT_MS = 5 * 60 * 1000 // 5 minutes
 
 @Injectable()
-export class DebatesService {
+export class DebatesService implements OnModuleInit {
   private readonly pendingTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
   constructor(
@@ -20,6 +20,19 @@ export class DebatesService {
     private readonly guestSessionRepo: Repository<GuestSession>,
     private readonly topicsService: TopicsService,
   ) {}
+
+  async onModuleInit() {
+    const pending = await this.debateRepo.find({ where: { status: 'pending' as const } })
+    for (const debate of pending) {
+      const elapsed = Date.now() - new Date(debate.created_at).getTime()
+      const remaining = DEBATE_TIMEOUT_MS - elapsed
+      if (remaining <= 0) {
+        await this.debateRepo.update({ id: debate.id, status: 'pending' }, { status: 'abandoned' })
+      } else {
+        this.startAbandonTimer(debate.id, remaining)
+      }
+    }
+  }
 
   async findAll(status?: string, page = 1, limit = 20) {
     const where: Record<string, string> = status ? { status } : {}
@@ -35,6 +48,7 @@ export class DebatesService {
   async findOpen(page = 1, limit = 20) {
     const [data, total] = await this.debateRepo.findAndCount({
       where: { status: 'pending' as const },
+      select: ['id', 'topic_id', 'status', 'created_at'],
       skip: (page - 1) * limit,
       take: limit,
       order: { created_at: 'DESC' },
@@ -180,15 +194,11 @@ export class DebatesService {
     return session
   }
 
-  private startAbandonTimer(debateId: string) {
+  private startAbandonTimer(debateId: string, ms = DEBATE_TIMEOUT_MS) {
     const timer = setTimeout(async () => {
       this.pendingTimers.delete(debateId)
-      const debate = await this.debateRepo.findOneBy({ id: debateId })
-      if (debate && debate.status === 'pending') {
-        debate.status = 'abandoned'
-        await this.debateRepo.save(debate)
-      }
-    }, DEBATE_TIMEOUT_MS)
+      await this.debateRepo.update({ id: debateId, status: 'pending' }, { status: 'abandoned' })
+    }, ms)
     this.pendingTimers.set(debateId, timer)
   }
 

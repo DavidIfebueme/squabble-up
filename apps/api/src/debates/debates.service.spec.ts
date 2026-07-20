@@ -31,6 +31,7 @@ describe('DebatesService', () => {
         {
           provide: getRepositoryToken(Debate),
           useValue: {
+            find: jest.fn(),
             findAndCount: jest.fn(),
             findOneBy: jest.fn(),
             create: jest.fn(),
@@ -371,22 +372,20 @@ describe('DebatesService', () => {
       expect(service['pendingTimers'].has('debate-uuid-1')).toBe(false)
     })
 
-    it('abandons debate after timeout', async () => {
+    it('abandons debate after timeout via atomic update', async () => {
       const debate = createMockDebate()
       debateRepo.create.mockReturnValue(debate)
       debateRepo.save.mockResolvedValue(debate)
       await service.create('user-1', { topic_id: 'topic-uuid-1' })
 
-      const abandonedDebate = createMockDebate({ status: 'abandoned' })
-      debateRepo.findOneBy.mockResolvedValue(createMockDebate())
-      debateRepo.save.mockResolvedValue(abandonedDebate)
-
-      debateRepo.findOneBy.mockResolvedValue(createMockDebate())
-      debateRepo.save.mockResolvedValue(undefined as any)
+      debateRepo.update.mockResolvedValue(undefined as any)
 
       jest.advanceTimersByTime(5 * 60 * 1000)
 
-      expect(debateRepo.findOneBy).toHaveBeenCalled()
+      expect(debateRepo.update).toHaveBeenCalledWith(
+        { id: 'debate-uuid-1', status: 'pending' },
+        { status: 'abandoned' }
+      )
     })
 
     it('clears timer on start', async () => {
@@ -400,6 +399,32 @@ describe('DebatesService', () => {
       await service.start('debate-uuid-1', 'user-1')
 
       expect(service['pendingTimers'].has('debate-uuid-1')).toBe(false)
+    })
+  })
+
+  describe('onModuleInit', () => {
+    beforeEach(() => jest.useFakeTimers())
+
+    it('abandons expired pending debates on startup', async () => {
+      const oldDebate = createMockDebate({ created_at: new Date(Date.now() - 10 * 60 * 1000) })
+      debateRepo.find.mockResolvedValue([oldDebate])
+      debateRepo.update.mockResolvedValue(undefined as any)
+
+      await service.onModuleInit()
+
+      expect(debateRepo.update).toHaveBeenCalledWith(
+        { id: 'debate-uuid-1', status: 'pending' },
+        { status: 'abandoned' }
+      )
+    })
+
+    it('restarts timers for non-expired pending debates on startup', async () => {
+      const recentDebate = createMockDebate({ created_at: new Date(Date.now() - 1 * 60 * 1000) })
+      debateRepo.find.mockResolvedValue([recentDebate])
+
+      await service.onModuleInit()
+
+      expect(service['pendingTimers'].has('debate-uuid-1')).toBe(true)
     })
   })
 })

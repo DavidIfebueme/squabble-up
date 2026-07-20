@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, Switch } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native'
 import type { Topic } from '@squabble-up/shared'
 import { getTopics } from '../lib/topics'
 import { createDebate } from '../lib/debates'
@@ -16,7 +16,6 @@ const COLORS = {
 }
 
 type Side = 'creator' | 'opponent'
-type OpponentMode = 'open' | 'invite'
 
 const STEPS = ['Topic', 'Settings', 'Lobby'] as const
 
@@ -26,8 +25,6 @@ export default function CreateDebateScreen({ navigation }: any) {
   const [query, setQuery] = useState('')
   const [topics, setTopics] = useState<Topic[]>([])
   const [side, setSide] = useState<Side | null>(null)
-  const [communityVote, setCommunityVote] = useState(false)
-  const [opponentMode, setOpponentMode] = useState<OpponentMode>('open')
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
@@ -125,42 +122,6 @@ export default function CreateDebateScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.sectionTitle}>Settings</Text>
-      <View style={styles.settingRow}>
-        <View style={styles.settingInfo}>
-          <Text style={styles.settingLabel}>Let the community vote?</Text>
-          <Text style={styles.settingSubtitle}>Community votes add 30% weight to the final score.</Text>
-        </View>
-        <Switch
-          value={communityVote}
-          onValueChange={setCommunityVote}
-          trackColor={{ false: COLORS.borderSubtle, true: COLORS.accentAmber }}
-          thumbColor={COLORS.textPrimary}
-        />
-      </View>
-
-      <Text style={styles.sectionTitle}>Opponent</Text>
-      <TouchableOpacity
-        style={[styles.modeCard, opponentMode === 'open' && styles.modeCardSelected]}
-        onPress={() => setOpponentMode('open')}
-      >
-        <Text style={styles.modeIcon}>🌐</Text>
-        <View style={styles.modeInfo}>
-          <Text style={styles.modeLabel}>Open Match</Text>
-          <Text style={styles.modeDesc}>Anyone can join</Text>
-        </View>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.modeCard, opponentMode === 'invite' && styles.modeCardSelected]}
-        onPress={() => setOpponentMode('invite')}
-      >
-        <Text style={styles.modeIcon}>🔗</Text>
-        <View style={styles.modeInfo}>
-          <Text style={styles.modeLabel}>Invite Friend</Text>
-          <Text style={styles.modeDesc}>Share a link</Text>
-        </View>
-      </TouchableOpacity>
-
       <View style={styles.timerInfo}>
         <Text style={styles.timerLabel}>Round Timers</Text>
         <Text style={styles.timerValue}>90s opening · 90s rebuttal · 60s closing</Text>
@@ -237,17 +198,6 @@ const styles = StyleSheet.create({
   sideLabel: { fontSize: 18, fontWeight: '800', color: COLORS.textSecondary, marginBottom: 4 },
   sideLabelSelected: { color: COLORS.accentAmber },
   sideDesc: { fontSize: 12, color: COLORS.textMuted },
-  sectionTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 8, marginTop: 8 },
-  settingRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginBottom: 12 },
-  settingInfo: { flex: 1 },
-  settingLabel: { fontSize: 16, fontWeight: '600', color: COLORS.textPrimary },
-  settingSubtitle: { fontSize: 12, color: COLORS.textSecondary, marginTop: 2 },
-  modeCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginBottom: 8, borderWidth: 2, borderColor: 'transparent' },
-  modeCardSelected: { borderColor: COLORS.accentAmber },
-  modeIcon: { fontSize: 24, marginRight: 12 },
-  modeInfo: { flex: 1 },
-  modeLabel: { fontSize: 16, fontWeight: '600', color: COLORS.textPrimary },
-  modeDesc: { fontSize: 12, color: COLORS.textSecondary },
   timerInfo: { backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginTop: 12 },
   timerLabel: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 4 },
   timerValue: { fontSize: 14, color: COLORS.textMuted },
