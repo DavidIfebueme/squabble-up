@@ -5,12 +5,14 @@ import { DebatesService } from './debates.service'
 import { Debate } from './debate.entity'
 import { GuestSession } from './guest-session.entity'
 import { TopicsService } from '../topics/topics.service'
-import { Repository } from 'typeorm'
+import { RealtimeGateway } from '../realtime/realtime.gateway'
+import { Repository, UpdateResult } from 'typeorm'
 
 describe('DebatesService', () => {
   let service: DebatesService
   let debateRepo: jest.Mocked<Repository<Debate>>
   let topicsService: jest.Mocked<TopicsService>
+  let realtimeGateway: jest.Mocked<RealtimeGateway>
 
   const createMockDebate = (overrides?: Partial<Debate>): Debate => ({
     id: 'debate-uuid-1',
@@ -53,12 +55,19 @@ describe('DebatesService', () => {
             incrementDebateCount: jest.fn(),
           },
         },
+        {
+          provide: RealtimeGateway,
+          useValue: {
+            emitDebateEvent: jest.fn(),
+          },
+        },
       ],
     }).compile()
 
     service = module.get(DebatesService)
     debateRepo = module.get(getRepositoryToken(Debate))
     topicsService = module.get(TopicsService)
+    realtimeGateway = module.get(RealtimeGateway)
   })
 
   afterEach(() => {
@@ -240,6 +249,26 @@ describe('DebatesService', () => {
       expect(result.data.status).toBe('abandoned')
     })
 
+    it('emits debate-abandoned for active debates', async () => {
+      const debate = createMockDebate({ status: 'active', opponent_id: 'user-2' })
+      debateRepo.findOneBy.mockResolvedValue(debate)
+      debateRepo.save.mockResolvedValue({ ...debate, status: 'abandoned' })
+
+      await service.abandon('debate-uuid-1', 'user-1')
+
+      expect(realtimeGateway.emitDebateEvent).toHaveBeenCalledWith('debate-uuid-1', 'debate-abandoned', { reason: 'manual_abandon' })
+    })
+
+    it('does not emit debate-abandoned for pending debates', async () => {
+      const debate = createMockDebate()
+      debateRepo.findOneBy.mockResolvedValue(debate)
+      debateRepo.save.mockResolvedValue({ ...debate, status: 'abandoned' })
+
+      await service.abandon('debate-uuid-1', 'user-1')
+
+      expect(realtimeGateway.emitDebateEvent).not.toHaveBeenCalled()
+    })
+
     it('throws ForbiddenException by non-participant', async () => {
       debateRepo.findOneBy.mockResolvedValue(createMockDebate())
 
@@ -262,7 +291,7 @@ describe('DebatesService', () => {
   describe('setScoringFailed', () => {
     it('updates status to scoring_failed', async () => {
       debateRepo.findOneBy.mockResolvedValue(createMockDebate({ status: 'active', opponent_id: 'user-2' }))
-      debateRepo.update.mockResolvedValue(undefined as any)
+      debateRepo.update.mockResolvedValue(undefined as unknown as UpdateResult)
 
       await service.setScoringFailed('debate-uuid-1')
 
@@ -288,7 +317,7 @@ describe('DebatesService', () => {
   describe('setWinner', () => {
     it('updates winner_id', async () => {
       debateRepo.findOneBy.mockResolvedValue(createMockDebate({ status: 'completed', opponent_id: 'user-2' }))
-      debateRepo.update.mockResolvedValue(undefined as any)
+      debateRepo.update.mockResolvedValue(undefined as unknown as UpdateResult)
 
       await service.setWinner('debate-uuid-1', 'user-1')
 
@@ -378,7 +407,7 @@ describe('DebatesService', () => {
       debateRepo.save.mockResolvedValue(debate)
       await service.create('user-1', { topic_id: 'topic-uuid-1' })
 
-      debateRepo.update.mockResolvedValue(undefined as any)
+      debateRepo.update.mockResolvedValue(undefined as unknown as UpdateResult)
 
       jest.advanceTimersByTime(5 * 60 * 1000)
 
@@ -408,7 +437,7 @@ describe('DebatesService', () => {
     it('abandons expired pending debates on startup', async () => {
       const oldDebate = createMockDebate({ created_at: new Date(Date.now() - 10 * 60 * 1000) })
       debateRepo.find.mockResolvedValue([oldDebate])
-      debateRepo.update.mockResolvedValue(undefined as any)
+      debateRepo.update.mockResolvedValue(undefined as unknown as UpdateResult)
 
       await service.onModuleInit()
 

@@ -5,23 +5,17 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import HomeScreen from './src/screens/HomeScreen'
 import DebateScreen from './src/screens/DebateScreen'
 import DebateLobbyScreen from './src/screens/DebateLobbyScreen'
-import DebateRoundScreen, { type RootStackParamList } from './src/screens/DebateRoundScreen'
+import DebateRoundScreen from './src/screens/DebateRoundScreen'
 import CreateDebateScreen from './src/screens/CreateDebateScreen'
 import ProfileScreen from './src/screens/ProfileScreen'
 import GuestDebateScreen from './src/screens/GuestDebateScreen'
 import ScoringScreen from './src/screens/ScoringScreen'
 import AuthScreen from './src/screens/AuthScreen'
+import type { RootStackParamList } from './src/lib/types'
 
 const Tab = createBottomTabNavigator()
 
-type AppStackParamList = RootStackParamList & {
-  Main: undefined
-  CreateDebate: undefined
-  DebateLobby: { debateId: string; side?: string }
-  GuestDebate: undefined
-  Scoring: undefined
-  Auth: undefined
-}
+export type AppStackParamList = RootStackParamList
 
 const Stack = createNativeStackNavigator<AppStackParamList>()
 

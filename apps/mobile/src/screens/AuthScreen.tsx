@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native'
+import type { ScreenProps } from '../lib/types'
 
-export default function AuthScreen({ navigation }: any) {
+export default function AuthScreen({ navigation }: ScreenProps<'Auth'>) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 

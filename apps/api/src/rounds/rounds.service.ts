@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { Round } from './round.entity'
 import { DebatesService } from '../debates/debates.service'
+import { RealtimeGateway } from '../realtime/realtime.gateway'
 import { DEBATE_ROUNDS } from '@squabble-up/shared'
 
 @Injectable()
@@ -11,6 +12,7 @@ export class RoundsService {
     @InjectRepository(Round)
     private readonly roundRepo: Repository<Round>,
     private readonly debatesService: DebatesService,
+    private readonly realtimeGateway: RealtimeGateway,
   ) {}
 
   async findByDebate(debateId: string) {
@@ -45,6 +47,12 @@ export class RoundsService {
       speaker_id: userId,
     })
     await this.roundRepo.save(round)
+
+    this.realtimeGateway.emitDebateEvent(data.debate_id, 'round-started', {
+      round_number: data.round_number,
+      speaker_id: userId,
+    })
+
     return { success: true, data: round }
   }
 
@@ -55,6 +63,12 @@ export class RoundsService {
 
     await this.roundRepo.update(id, data)
     const updated = await this.roundRepo.findOneBy({ id })
+
+    this.realtimeGateway.emitDebateEvent(round.debate_id, 'round-submitted', {
+      round_number: round.round_number,
+      speaker_id: userId,
+    })
+
     return { success: true, data: updated }
   }
 }

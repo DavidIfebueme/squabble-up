@@ -189,7 +189,7 @@ describe('TopicsService', () => {
 
   describe('incrementDebateCount', () => {
     it('increments debate count', async () => {
-      topicRepo.increment.mockResolvedValue(undefined as any)
+      topicRepo.increment.mockResolvedValue(undefined as unknown as import('typeorm').UpdateResult)
 
       await service.incrementDebateCount('topic-uuid-1')
 

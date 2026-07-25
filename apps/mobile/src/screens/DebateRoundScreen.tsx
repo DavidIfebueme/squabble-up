@@ -1,17 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import VoiceRecorder from '../components/VoiceRecorder'
-import { createRound, updateRound, getRoundsByDebate } from '../lib/rounds'
+import { createRound, updateRound } from '../lib/rounds'
 import { getDebate } from '../lib/debates'
+import { joinDebateRoom, leaveDebateRoom, onDebateEvent, startHeartbeat } from '../lib/socket'
 import { ROUND_DURATIONS, ROUND_NUMBER_TO_TYPE } from '@squabble-up/shared'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { ScreenProps } from '../lib/types'
 
-export type RootStackParamList = {
-  DebateRound: { debateId: string; roundNumber: number; side: 'creator' | 'opponent' }
-  DebateLobby: { debateId: string; side?: string }
-}
-
-type Props = NativeStackScreenProps<RootStackParamList, 'DebateRound'>
+type Props = ScreenProps<'DebateRound'>
 
 const COLORS = {
   bgPrimary: '#1E1E1E',
@@ -38,6 +34,8 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
   const [opponentStatus, setOpponentStatus] = useState<'waiting' | 'recording' | 'done'>('waiting')
   const [roundId, setRoundId] = useState<string | null>(null)
   const [creating, setCreating] = useState(true)
+  const [opponentDisconnected, setOpponentDisconnected] = useState(false)
+  const [reconnectRemaining, setReconnectRemaining] = useState<number | null>(null)
   const [opponentId, setOpponentId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -50,9 +48,11 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
           navigation.goBack()
           return
         }
-        const oppId = side === 'creator' ? result.data.opponent_id : result.data.creator_id
-        if (cancelled) return
-        setOpponentId(oppId)
+
+        if (!cancelled) {
+          const d = result.data
+          setOpponentId(side === 'creator' ? d.opponent_id : d.creator_id)
+        }
 
         try {
           const roundResult = await createRound(debateId, roundNumber)
@@ -79,22 +79,61 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
   }, [debateId, roundNumber, side, navigation])
 
   useEffect(() => {
-    if (!opponentId) return
-    const interval = setInterval(async () => {
-      try {
-        const result = await getRoundsByDebate(debateId)
-        if (result.success) {
-          const opponentRound = result.data.find(
-            r => r.round_number === roundNumber && r.speaker_id === opponentId
-          )
-          setOpponentStatus(opponentRound ? 'done' : 'waiting')
-        }
-      } catch {
-        // Network error — keep current status
+    joinDebateRoom(debateId)
+    startHeartbeat(debateId)
+    return () => { leaveDebateRoom(debateId) }
+  }, [debateId])
+
+  useEffect(() => {
+    const cleanup1 = onDebateEvent('round-started', (data) => {
+      if (data.payload?.round_number === roundNumber && data.payload?.speaker_id !== undefined) {
+        if (data.payload.speaker_id !== opponentId) return
+        setOpponentStatus('recording')
       }
-    }, 3000)
-    return () => clearInterval(interval)
-  }, [debateId, roundNumber, opponentId])
+    })
+    const cleanup2 = onDebateEvent('round-submitted', (data) => {
+      if (data.payload?.round_number === roundNumber) {
+        if (data.payload?.speaker_id !== undefined && data.payload.speaker_id !== opponentId) return
+        setOpponentStatus('done')
+      }
+    })
+    const cleanup3 = onDebateEvent('opponent-disconnected', () => {
+      setOpponentDisconnected(true)
+      setReconnectRemaining(120)
+    })
+    const cleanup4 = onDebateEvent('opponent-reconnected', () => {
+      setOpponentDisconnected(false)
+      setReconnectRemaining(null)
+      setOpponentStatus('waiting')
+    })
+    const cleanup5 = onDebateEvent('reconnect-window', (data) => {
+      const remaining = data.remaining_ms ?? 0
+      setReconnectRemaining(Math.ceil(remaining / 1000))
+    })
+    const cleanup6 = onDebateEvent('debate-completed', () => {
+      navigation.replace('Scoring', { debateId })
+    })
+    const cleanup7 = onDebateEvent('debate-abandoned', () => {
+      Alert.alert('Debate Abandoned', 'Your opponent did not reconnect in time. You win by default.', [
+        { text: 'OK', onPress: () => navigation.replace('Scoring', { debateId }) },
+      ])
+    })
+    const cleanup8 = onDebateEvent('user-left', () => {
+      setOpponentDisconnected(true)
+      setReconnectRemaining(120)
+    })
+
+    return () => {
+      cleanup1()
+      cleanup2()
+      cleanup3()
+      cleanup4()
+      cleanup5()
+      cleanup6()
+      cleanup7()
+      cleanup8()
+    }
+  }, [debateId, roundNumber, navigation, opponentId])
 
   const handleRecordComplete = useCallback(async ({ transcription, duration: recordedDuration }: { transcription: string; duration: number }) => {
     if (!roundId) {
@@ -112,6 +151,14 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
     : opponentStatus === 'recording' ? COLORS.accentAmber
     : COLORS.textMuted
 
+  const opponentStatusText = opponentDisconnected
+    ? reconnectRemaining !== null
+      ? `Opponent disconnected. Waiting for them to return... ${Math.floor(reconnectRemaining / 60)}:${String(reconnectRemaining % 60).padStart(2, '0')}`
+      : 'Opponent disconnected. Waiting...'
+    : opponentStatus === 'recording' ? 'Opponent: Recording...'
+    : opponentStatus === 'done' ? 'Opponent: Done'
+    : 'Opponent: Waiting...'
+
   if (creating) return <View style={styles.container} />
 
   return (
@@ -127,9 +174,7 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
       <Text style={styles.prompt}>{label.prompt}</Text>
 
       <View style={styles.opponentStatus}>
-        <Text style={styles.opponentLabel}>
-          Opponent: {opponentStatus === 'done' ? 'Done' : 'Waiting...'}
-        </Text>
+        <Text style={styles.opponentLabel}>{opponentStatusText}</Text>
       </View>
 
       <TouchableOpacity style={styles.leaveButton} onPress={() => navigation.goBack()}>

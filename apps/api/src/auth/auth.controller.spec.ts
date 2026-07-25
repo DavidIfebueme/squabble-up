@@ -2,6 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { UnauthorizedException } from '@nestjs/common'
 import { AuthController } from './auth.controller'
 import { AuthService } from './auth.service'
+import type { Response } from 'express'
+
+interface MockRequest {
+  cookies: Record<string, string>
+  user?: { id: string }
+}
+
+interface MockResponse {
+  cookie: jest.Mock
+  clearCookie: jest.Mock
+}
 
 describe('AuthController', () => {
   let controller: AuthController
@@ -30,18 +41,18 @@ describe('AuthController', () => {
 
   describe('refresh', () => {
     it('throws UnauthorizedException when no refresh_token cookie', async () => {
-      const req = { cookies: {} } as any
-      const res = { cookie: jest.fn() } as any
+      const req: MockRequest = { cookies: {} }
+      const res: MockResponse = { cookie: jest.fn(), clearCookie: jest.fn() }
 
-      await expect(controller.refresh(req, res)).rejects.toThrow(UnauthorizedException)
-      await expect(controller.refresh(req, res)).rejects.toThrow('No refresh token')
+      await expect(controller.refresh(req as never, res as unknown as Response)).rejects.toThrow(UnauthorizedException)
+      await expect(controller.refresh(req as never, res as unknown as Response)).rejects.toThrow('No refresh token')
     })
 
     it('throws UnauthorizedException when cookies is undefined', async () => {
-      const req = {} as any
-      const res = { cookie: jest.fn() } as any
+      const req = {} as MockRequest
+      const res: MockResponse = { cookie: jest.fn(), clearCookie: jest.fn() }
 
-      await expect(controller.refresh(req, res)).rejects.toThrow(UnauthorizedException)
+      await expect(controller.refresh(req as never, res as unknown as Response)).rejects.toThrow(UnauthorizedException)
     })
 
     it('returns new access_token and sets refresh cookie', async () => {
@@ -50,10 +61,10 @@ describe('AuthController', () => {
         refresh_token: 'new-refresh',
       })
 
-      const req = { cookies: { refresh_token: 'old-refresh' } } as any
-      const res = { cookie: jest.fn() } as any
+      const req: MockRequest = { cookies: { refresh_token: 'old-refresh' } }
+      const res: MockResponse = { cookie: jest.fn(), clearCookie: jest.fn() }
 
-      const result = await controller.refresh(req, res)
+      const result = await controller.refresh(req as never, res as unknown as Response)
 
       expect(authService.refresh).toHaveBeenCalledWith('old-refresh')
       expect(res.cookie).toHaveBeenCalledWith(
@@ -67,19 +78,19 @@ describe('AuthController', () => {
     it('propagates UnauthorizedException from service for invalid token', async () => {
       authService.refresh.mockRejectedValue(new UnauthorizedException('Invalid refresh token'))
 
-      const req = { cookies: { refresh_token: 'bad-token' } } as any
-      const res = { cookie: jest.fn() } as any
+      const req: MockRequest = { cookies: { refresh_token: 'bad-token' } }
+      const res: MockResponse = { cookie: jest.fn(), clearCookie: jest.fn() }
 
-      await expect(controller.refresh(req, res)).rejects.toThrow(UnauthorizedException)
+      await expect(controller.refresh(req as never, res as unknown as Response)).rejects.toThrow(UnauthorizedException)
     })
   })
 
   describe('logout', () => {
     it('clears refresh_token cookie even when not authenticated', async () => {
-      const req = { cookies: { refresh_token: 'some-token' }, user: undefined } as any
-      const res = { clearCookie: jest.fn() } as any
+      const req: MockRequest = { cookies: { refresh_token: 'some-token' } }
+      const res: MockResponse = { cookie: jest.fn(), clearCookie: jest.fn() }
 
-      const result = await controller.logout(req, res)
+      const result = await controller.logout(req as never, res as unknown as Response)
 
       expect(authService.logout).not.toHaveBeenCalled()
       expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', { path: '/api/v1/auth' })
@@ -87,13 +98,13 @@ describe('AuthController', () => {
     })
 
     it('calls authService.logout when user and refresh_token are present', async () => {
-      const req = {
+      const req: MockRequest = {
         cookies: { refresh_token: 'valid-token' },
         user: { id: 'user-123' },
-      } as any
-      const res = { clearCookie: jest.fn() } as any
+      }
+      const res: MockResponse = { cookie: jest.fn(), clearCookie: jest.fn() }
 
-      const result = await controller.logout(req, res)
+      const result = await controller.logout(req as never, res as unknown as Response)
 
       expect(authService.logout).toHaveBeenCalledWith('user-123', 'valid-token')
       expect(res.clearCookie).toHaveBeenCalledWith('refresh_token', { path: '/api/v1/auth' })
@@ -103,13 +114,13 @@ describe('AuthController', () => {
     it('clears cookie even when logout service call fails', async () => {
       authService.logout.mockRejectedValue(new Error('redis down'))
 
-      const req = {
+      const req: MockRequest = {
         cookies: { refresh_token: 'valid-token' },
         user: { id: 'user-123' },
-      } as any
-      const res = { clearCookie: jest.fn() } as any
+      }
+      const res: MockResponse = { cookie: jest.fn(), clearCookie: jest.fn() }
 
-      await expect(controller.logout(req, res)).rejects.toThrow('redis down')
+      await expect(controller.logout(req as never, res as unknown as Response)).rejects.toThrow('redis down')
       expect(res.clearCookie).not.toHaveBeenCalled()
     })
   })
@@ -165,11 +176,11 @@ describe('AuthController', () => {
         },
       })
 
-      const res = { cookie: jest.fn() } as any
+      const res: MockResponse = { cookie: jest.fn(), clearCookie: jest.fn() }
 
       const result = await controller.login(
         { email: 'test@example.com', password: 'password123' },
-        res
+        res as unknown as Response
       )
 
       expect(res.cookie).toHaveBeenCalledWith(

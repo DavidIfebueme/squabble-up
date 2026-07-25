@@ -5,9 +5,10 @@ import { DebatesService } from './debates.service'
 import { Debate } from './debate.entity'
 import { GuestSession } from './guest-session.entity'
 import { TopicsModule } from '../topics/topics.module'
+import { RealtimeModule } from '../realtime/realtime.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Debate, GuestSession]), TopicsModule],
+  imports: [TypeOrmModule.forFeature([Debate, GuestSession]), TopicsModule, RealtimeModule],
   controllers: [DebatesController],
   providers: [DebatesService],
   exports: [DebatesService],

@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import type { ScreenProps } from '../lib/types'
 
-export default function GuestDebateScreen({ navigation }: any) {
+export default function GuestDebateScreen({ navigation }: ScreenProps<'GuestDebate'>) {
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Quick Debate</Text>

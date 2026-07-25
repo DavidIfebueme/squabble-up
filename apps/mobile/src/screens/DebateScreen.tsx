@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native'
 import type { Debate, DebateStatus } from '@squabble-up/shared'
 import { getOpenDebates } from '../lib/debates'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import type { AppStackParamList } from '../../App'
+
+type NavigationProp = NativeStackNavigationProp<AppStackParamList>
 
 const COLORS = {
   bgPrimary: '#1E1E1E',
@@ -25,7 +29,7 @@ const STATUS_LABELS: Record<DebateStatus, string> = {
   scoring_failed: 'ERROR',
 }
 
-export default function DebateScreen({ navigation }: any) {
+export default function DebateScreen({ navigation }: { navigation: NavigationProp }) {
   const [debates, setDebates] = useState<Debate[]>([])
   const [refreshing, setRefreshing] = useState(false)
   const [loading, setLoading] = useState(true)
