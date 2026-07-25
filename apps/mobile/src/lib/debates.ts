@@ -25,3 +25,8 @@ export async function joinDebate(id: string) {
   const { data } = await api.post<{ success: boolean; data: { debate: Debate } }>(`/debates/${id}/join`)
   return data
 }
+
+export async function triggerScoring(id: string) {
+  const { data } = await api.post<{ success: boolean; data: { job_id: string } }>(`/debates/${id}/score`)
+  return data
+}

@@ -25,4 +25,11 @@ export class Debate {
 
   @Column({ nullable: true })
   completed_at: Date | null
+
+  @Column({ type: 'jsonb', nullable: true })
+  ai_scores: {
+    creator: { logic: number; persuasiveness: number; evidence: number; delivery: number }
+    opponent: { logic: number; persuasiveness: number; evidence: number; delivery: number }
+    reasoning: string
+  } | null
 }

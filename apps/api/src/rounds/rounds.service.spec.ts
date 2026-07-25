@@ -32,6 +32,7 @@ describe('RoundsService', () => {
     opponent_id: 'user-2',
     status: 'active',
     winner_id: null,
+    ai_scores: null,
     created_at: new Date(),
     completed_at: null,
     ...overrides,
