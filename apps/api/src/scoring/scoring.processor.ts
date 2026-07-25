@@ -33,10 +33,6 @@ export class ScoringProcessor extends WorkerHost {
       if (!debate) return
       if (debate.status !== 'active') return
 
-      const topicResult = await this.topicsService.findById(debate.topic_id)
-      if (!topicResult.data) return
-
-
       const roundsResult = await this.roundsService.findByDebate(debateId)
       const rounds = roundsResult.data
       if (!rounds || rounds.length < 6) return
@@ -56,7 +52,6 @@ export class ScoringProcessor extends WorkerHost {
       }
 
       const topicResult = await this.topicsService.findById(debate.topic_id)
-      const topic = topicResult.data
 
       const transcripts = rounds.map(r => ({
         round_number: r.round_number,

@@ -7,6 +7,7 @@ import { UsersService } from '../users/users.service'
 import { RoundsService } from '../rounds/rounds.service'
 import { TopicsService } from '../topics/topics.service'
 import { GeminiService } from './gemini.service'
+import { ContentFilterService } from './content-filter.service'
 
 describe('ScoringProcessor', () => {
   let processor: ScoringProcessor
@@ -16,6 +17,7 @@ describe('ScoringProcessor', () => {
   let roundsService: jest.Mocked<RoundsService>
   let topicsService: jest.Mocked<TopicsService>
   let geminiService: jest.Mocked<GeminiService>
+  let contentFilter: jest.Mocked<ContentFilterService>
 
   const debateId = 'debate-uuid-1'
   const creatorId = 'creator-uuid-1'
@@ -87,6 +89,10 @@ describe('ScoringProcessor', () => {
           provide: GeminiService,
           useValue: { scoreDebate: jest.fn() },
         },
+        {
+          provide: ContentFilterService,
+          useValue: { filter: jest.fn().mockReturnValue({ flagged: false }) },
+        },
       ],
     }).compile()
 
@@ -97,6 +103,7 @@ describe('ScoringProcessor', () => {
     roundsService = module.get(RoundsService)
     topicsService = module.get(TopicsService)
     geminiService = module.get(GeminiService)
+    contentFilter = module.get(ContentFilterService)
 
     debatesService.findById.mockResolvedValue({ success: true, data: mockDebate })
     topicsService.findById.mockResolvedValue({ success: true, data: mockTopic })
