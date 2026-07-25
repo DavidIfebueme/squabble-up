@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react'
-import { View, Animated, StyleSheet } from 'react-native'
+import { Animated } from 'react-native'
 import { COLORS } from '../lib/design'
 
 type Props = {
   width?: number | string
   height?: number
   borderRadius?: number
-  style?: any
+  style?: Record<string, unknown>
 }
 
 export default function Skeleton({ width = '100%', height = 16, borderRadius = 4, style }: Props) {
