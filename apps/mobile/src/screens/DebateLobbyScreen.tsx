@@ -21,7 +21,7 @@ const COUNTDOWN_SECONDS = 3
 const POLL_INTERVAL_MS = 3000
 
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import type { RootStackParamList } from './DebateRoundScreen'
+import type { RootStackParamList } from '../lib/types'
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DebateLobby'>
 

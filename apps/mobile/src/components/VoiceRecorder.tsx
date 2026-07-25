@@ -128,8 +128,8 @@ export default function VoiceRecorder({ duration, onComplete, disabled }: Props)
         requiresOnDeviceRecognition: Platform.OS === 'android',
       })
       setState('recording')
-    } catch (e: any) {
-      setError(e?.message || 'Could not start recording. Check microphone permissions.')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Could not start recording. Check microphone permissions.')
     }
   }
 

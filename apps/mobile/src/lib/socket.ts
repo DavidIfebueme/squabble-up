@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client'
+import type { DebateEvent } from './types'
 
 const SOCKET_URL = 'http://localhost:3000'
 const HEARTBEAT_INTERVAL_MS = 30_000
@@ -62,7 +63,7 @@ export function stopHeartbeat() {
   }
 }
 
-export function onDebateEvent(event: string, callback: (data: any) => void) {
+export function onDebateEvent(event: string, callback: (data: DebateEvent) => void) {
   const s = getSocket()
   s.on(event, callback)
   return () => { s.off(event, callback) }

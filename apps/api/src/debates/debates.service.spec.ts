@@ -6,7 +6,7 @@ import { Debate } from './debate.entity'
 import { GuestSession } from './guest-session.entity'
 import { TopicsService } from '../topics/topics.service'
 import { RealtimeGateway } from '../realtime/realtime.gateway'
-import { Repository } from 'typeorm'
+import { Repository, UpdateResult } from 'typeorm'
 
 describe('DebatesService', () => {
   let service: DebatesService
@@ -269,7 +269,7 @@ describe('DebatesService', () => {
   describe('setScoringFailed', () => {
     it('updates status to scoring_failed', async () => {
       debateRepo.findOneBy.mockResolvedValue(createMockDebate({ status: 'active', opponent_id: 'user-2' }))
-      debateRepo.update.mockResolvedValue(undefined as any)
+      debateRepo.update.mockResolvedValue(undefined as unknown as UpdateResult)
 
       await service.setScoringFailed('debate-uuid-1')
 
@@ -295,7 +295,7 @@ describe('DebatesService', () => {
   describe('setWinner', () => {
     it('updates winner_id', async () => {
       debateRepo.findOneBy.mockResolvedValue(createMockDebate({ status: 'completed', opponent_id: 'user-2' }))
-      debateRepo.update.mockResolvedValue(undefined as any)
+      debateRepo.update.mockResolvedValue(undefined as unknown as UpdateResult)
 
       await service.setWinner('debate-uuid-1', 'user-1')
 
@@ -385,7 +385,7 @@ describe('DebatesService', () => {
       debateRepo.save.mockResolvedValue(debate)
       await service.create('user-1', { topic_id: 'topic-uuid-1' })
 
-      debateRepo.update.mockResolvedValue(undefined as any)
+      debateRepo.update.mockResolvedValue(undefined as unknown as UpdateResult)
 
       jest.advanceTimersByTime(5 * 60 * 1000)
 
@@ -415,7 +415,7 @@ describe('DebatesService', () => {
     it('abandons expired pending debates on startup', async () => {
       const oldDebate = createMockDebate({ created_at: new Date(Date.now() - 10 * 60 * 1000) })
       debateRepo.find.mockResolvedValue([oldDebate])
-      debateRepo.update.mockResolvedValue(undefined as any)
+      debateRepo.update.mockResolvedValue(undefined as unknown as UpdateResult)
 
       await service.onModuleInit()
 

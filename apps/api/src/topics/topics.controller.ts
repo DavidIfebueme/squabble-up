@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/
 import { TopicsService } from './topics.service'
 import { CreateTopicDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import type { AuthRequest } from '../common/types/auth-request'
 
 @ApiTags('topics')
 @Controller('topics')
@@ -36,7 +37,7 @@ export class TopicsController {
   @ApiOperation({ summary: 'Create a new topic' })
   @ApiResponse({ status: 201, description: 'Topic created' })
   @ApiResponse({ status: 409, description: 'Topic with this title already exists' })
-  async create(@Body() body: CreateTopicDto, @Req() req: any) {
+  async create(@Body() body: CreateTopicDto, @Req() req: AuthRequest) {
     return this.topicsService.create({ ...body, created_by: req.user?.id })
   }
 }

@@ -5,15 +5,9 @@ import { createRound, updateRound } from '../lib/rounds'
 import { getDebate } from '../lib/debates'
 import { joinDebateRoom, leaveDebateRoom, onDebateEvent, startHeartbeat } from '../lib/socket'
 import { ROUND_DURATIONS, ROUND_NUMBER_TO_TYPE } from '@squabble-up/shared'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { ScreenProps } from '../lib/types'
 
-export type RootStackParamList = {
-  DebateRound: { debateId: string; roundNumber: number; side: 'creator' | 'opponent' }
-  DebateLobby: { debateId: string; side?: string }
-  Scoring: { debateId: string }
-}
-
-type Props = NativeStackScreenProps<RootStackParamList, 'DebateRound'>
+type Props = ScreenProps<'DebateRound'>
 
 const COLORS = {
   bgPrimary: '#1E1E1E',
@@ -85,12 +79,12 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
   }, [debateId])
 
   useEffect(() => {
-    const cleanup1 = onDebateEvent('round-started', (data: any) => {
+    const cleanup1 = onDebateEvent('round-started', (data) => {
       if (data.payload?.round_number === roundNumber && data.payload?.speaker_id !== undefined) {
         setOpponentStatus('recording')
       }
     })
-    const cleanup2 = onDebateEvent('round-submitted', (data: any) => {
+    const cleanup2 = onDebateEvent('round-submitted', (data) => {
       if (data.payload?.round_number === roundNumber) {
         setOpponentStatus('done')
       }
@@ -104,11 +98,7 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
       setReconnectRemaining(null)
       setOpponentStatus('waiting')
     })
-    const cleanup5 = onDebateEvent('reconnect-window', (data: any) => {
-      const remaining = data.remaining_ms ?? 0
-      setReconnectRemaining(Math.ceil(remaining / 1000))
-    })
-    const cleanup5 = onDebateEvent('reconnect-window', (data: any) => {
+    const cleanup5 = onDebateEvent('reconnect-window', (data) => {
       const remaining = data.remaining_ms ?? 0
       setReconnectRemaining(Math.ceil(remaining / 1000))
     })

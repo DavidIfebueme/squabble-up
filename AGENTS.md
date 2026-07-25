@@ -79,6 +79,19 @@ Ask yourself: "What breaks first, and does the caller know why?" If no, handle i
 - Never merge your own PR — wait for review or explicit approval.
 - CI must pass before merge.
 
+## 7. Code Quality Rules
+
+- **Read files in full** before making wide-ranging changes. Never edit blind.
+- **No `any`** unless absolutely necessary. Prefer `unknown` and narrow with type guards.
+- **Inline single-line helpers** that have only one call site. No unnecessary abstractions.
+- **Check `node_modules`** for external API types before writing manual interfaces.
+- **No inline imports.** All imports go at the top of the file.
+- **Never remove or downgrade code** to fix type errors from outdated dependencies. Fix the types.
+- **Use only erasable TypeScript syntax.** No parameter properties, `enum`, `namespace`, `import =`, or `export =`.
+- **Always ask before removing** code that appears intentional.
+- **Do not preserve backward compatibility** unless explicitly asked.
+- **Never hardcode key checks.** Add new keys to `DEFAULT_*_KEYBINDINGS` constants.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.

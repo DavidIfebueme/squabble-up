@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request } from '@nestjs/common'
 import { CommentsService } from './comments.service'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
+import type { AuthRequest } from '../common/types/auth-request'
 
 @Controller('comments')
 export class CommentsController {
@@ -13,7 +14,7 @@ export class CommentsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  async create(@Request() req: any, @Body() body: { debate_id: string; content: string }) {
+  async create(@Request() req: AuthRequest, @Body() body: { debate_id: string; content: string }) {
     return this.commentsService.create(req.user.id, body)
   }
 

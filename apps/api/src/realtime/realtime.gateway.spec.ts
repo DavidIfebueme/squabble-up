@@ -48,7 +48,7 @@ describe('RealtimeGateway', () => {
     it('should emit opponent-reconnected when reconnect timer exists', () => {
       const mockClient = { join: jest.fn(), id: 'client-2' } as unknown as Socket
       const timer = jest.fn()
-      gateway['reconnectTimers'] = new Map([['debate-1', timer as any]])
+      gateway['reconnectTimers'] = new Map([['debate-1', timer as unknown as ReturnType<typeof setInterval>]])
 
       gateway.handleJoinDebate(mockClient, { debate_id: 'debate-1' })
 
@@ -61,7 +61,7 @@ describe('RealtimeGateway', () => {
 
     it('should not emit user-joined when opponent is reconnecting', () => {
       const mockClient = { join: jest.fn(), id: 'client-2' } as unknown as Socket
-      gateway['reconnectTimers'] = new Map([['debate-1', jest.fn() as any]])
+      gateway['reconnectTimers'] = new Map([['debate-1', jest.fn() as unknown as ReturnType<typeof setInterval>]])
 
       gateway.handleJoinDebate(mockClient, { debate_id: 'debate-1' })
 
@@ -111,7 +111,7 @@ describe('RealtimeGateway', () => {
     it('should clear reconnect timer and emit opponent-reconnected', () => {
       const mockClient = { id: 'client-1' } as unknown as Socket
       const timer = jest.fn()
-      gateway['reconnectTimers'] = new Map([['debate-1', timer as any]])
+      gateway['reconnectTimers'] = new Map([['debate-1', timer as unknown as ReturnType<typeof setInterval>]])
 
       gateway.handleHeartbeat(mockClient, { debate_id: 'debate-1' })
 
@@ -230,7 +230,7 @@ describe('RealtimeGateway', () => {
 
     it('should clear reconnect timer when client reconnects with new socket ID', () => {
       const mockClient = { join: jest.fn(), id: 'client-2' } as unknown as Socket
-      gateway['reconnectTimers'] = new Map([['debate-1', jest.fn() as any]])
+      gateway['reconnectTimers'] = new Map([['debate-1', jest.fn() as unknown as ReturnType<typeof setInterval>]])
 
       gateway.handleJoinDebate(mockClient, { debate_id: 'debate-1' })
 

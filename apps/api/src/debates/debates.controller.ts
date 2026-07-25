@@ -4,6 +4,7 @@ import { DebatesService } from './debates.service'
 import { CreateDebateDto } from './dto'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { OptionalAuthGuard } from '../auth/guards/optional-auth.guard'
+import type { AuthRequest, OptionalAuthRequest } from '../common/types/auth-request'
 
 @ApiTags('debates')
 @Controller('debates')
@@ -31,7 +32,7 @@ export class DebatesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: "List current user's debates" })
   @ApiResponse({ status: 200, description: "Paginated list of user's debates" })
-  async my(@Request() req: any, @Query('page') page = 1, @Query('limit') limit = 20) {
+  async my(@Request() req: AuthRequest, @Query('page') page = 1, @Query('limit') limit = 20) {
     return this.debatesService.findMy(req.user.id, +page, +limit)
   }
 
@@ -48,7 +49,7 @@ export class DebatesController {
   @UseGuards(OptionalAuthGuard)
   @ApiOperation({ summary: 'Create a new debate' })
   @ApiResponse({ status: 201, description: 'Debate created' })
-  async create(@Request() req: any, @Body() body: CreateDebateDto) {
+  async create(@Request() req: OptionalAuthRequest, @Body() body: CreateDebateDto) {
     return this.debatesService.create(req.user?.id ?? null, body)
   }
 
@@ -58,7 +59,7 @@ export class DebatesController {
   @ApiParam({ name: 'id', description: 'Debate UUID' })
   @ApiResponse({ status: 200, description: 'Joined debate' })
   @ApiResponse({ status: 400, description: 'Debate is full or not open' })
-  async join(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+  async join(@Request() req: OptionalAuthRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.debatesService.join(id, req.user?.id ?? null)
   }
 
@@ -69,7 +70,7 @@ export class DebatesController {
   @ApiResponse({ status: 200, description: 'Debate started' })
   @ApiResponse({ status: 400, description: 'Missing participants or wrong state' })
   @ApiResponse({ status: 403, description: 'Not a participant' })
-  async start(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+  async start(@Request() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.debatesService.start(id, req.user.id)
   }
 
@@ -80,7 +81,7 @@ export class DebatesController {
   @ApiResponse({ status: 200, description: 'Debate completed' })
   @ApiResponse({ status: 400, description: 'Debate is not active' })
   @ApiResponse({ status: 403, description: 'Not a participant' })
-  async complete(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+  async complete(@Request() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.debatesService.complete(id, req.user.id)
   }
 
@@ -91,7 +92,7 @@ export class DebatesController {
   @ApiResponse({ status: 200, description: 'Debate abandoned' })
   @ApiResponse({ status: 400, description: 'Wrong state' })
   @ApiResponse({ status: 403, description: 'Not a participant' })
-  async abandon(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+  async abandon(@Request() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.debatesService.abandon(id, req.user.id)
   }
 

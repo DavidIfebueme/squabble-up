@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, Switch } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Alert, Switch } from 'react-native'
 import type { Topic } from '@squabble-up/shared'
 import { getTopics } from '../lib/topics'
 import { createDebate } from '../lib/debates'
+import type { ScreenProps } from '../lib/types'
 
 const COLORS = {
   bgPrimary: '#1E1E1E',
@@ -19,7 +20,7 @@ type Side = 'creator' | 'opponent'
 
 const STEPS = ['Topic', 'Settings', 'Lobby'] as const
 
-export default function CreateDebateScreen({ navigation }: any) {
+export default function CreateDebateScreen({ navigation }: ScreenProps<'CreateDebate'>) {
   const [step, setStep] = useState(0)
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
   const [query, setQuery] = useState('')

@@ -2,6 +2,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native'
 import type { Topic } from '@squabble-up/shared'
 import { getTopics } from '../lib/topics'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import type { AppStackParamList } from '../../App'
+
+type NavigationProp = NativeStackNavigationProp<AppStackParamList>
 
 const CATEGORIES = ['All', 'Politics', 'Tech', 'Sports', 'Philosophy', 'Pop Culture', 'Science', 'Ethics', 'Food', 'Music', 'Gaming']
 
@@ -16,7 +20,7 @@ const COLORS = {
   borderSubtle: '#3A3A3A',
 }
 
-export default function HomeScreen({ navigation }: any) {
+export default function HomeScreen({ navigation }: { navigation: NavigationProp }) {
   const [topics, setTopics] = useState<Topic[]>([])
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [refreshing, setRefreshing] = useState(false)
