@@ -89,7 +89,7 @@ export default function ScoringScreen({ route, navigation }: Props) {
         <Text style={styles.tagline}>Your opinion, scored.</Text>
 
         <Text style={styles.topicTitle}>{scorecard.topic?.title || 'Debate'}</Text>
-        <Text style={styles.date}>{new Date(scorecard.completed_at).toLocaleDateString()}</Text>
+        <Text style={styles.date}>{scorecard.completed_at ? new Date(scorecard.completed_at).toLocaleDateString() : ''}</Text>
 
         <View style={styles.divider} />
 
