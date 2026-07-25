@@ -2,7 +2,7 @@
   "name": "@squabble-up/mobile",
   "version": "0.1.0",
   "private": true,
-  "main": "expo-router/entry",
+  "main": "expo/AppEntry",
   "scripts": {
     "start": "expo start",
     "dev": "expo start",
