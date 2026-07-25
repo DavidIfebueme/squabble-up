@@ -197,7 +197,7 @@ export default function DebateLobbyScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgPrimary, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  heading: { fontFamily: 'serif', fontSize: 22, color: COLORS.textPrimary, marginBottom: 8, textAlign: 'center' },
+  heading: { fontFamily: 'DM Serif Display', fontSize: 22, color: COLORS.textPrimary, marginBottom: 8, textAlign: 'center' },
   topicTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 8, textAlign: 'center' },
   sideBadge: { backgroundColor: COLORS.accentAmber, color: COLORS.bgPrimary, fontSize: 14, fontWeight: '700', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginBottom: 24 },
   rulesContainer: { backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginBottom: 24, width: '100%' },

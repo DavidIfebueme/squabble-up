@@ -10,4 +10,8 @@ export class CreateDebateDto {
   @IsOptional()
   @IsIn(['creator', 'opponent'])
   participant_role?: 'creator' | 'opponent'
+
+  @ApiPropertyOptional({ description: 'Enable community voting' })
+  @IsOptional()
+  community_voting?: boolean
 }

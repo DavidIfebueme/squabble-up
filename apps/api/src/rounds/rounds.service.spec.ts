@@ -33,6 +33,7 @@ describe('RoundsService', () => {
     status: 'active',
     winner_id: null,
     ai_scores: null,
+    community_voting: false,
     created_at: new Date(),
     completed_at: null,
     ...overrides,

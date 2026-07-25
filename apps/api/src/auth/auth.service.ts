@@ -9,13 +9,6 @@ import { RedisService } from '../redis/redis.service'
 
 const SALT_ROUNDS = 12
 
-interface GooglePayload {
-  sub: string
-  email: string
-  name: string
-  picture: string
-}
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -74,7 +67,13 @@ export class AuthService {
     return this.generateTokenResponse(user)
   }
 
-  async googleAuth(payload: GooglePayload) {
+  async googleAuth(idToken: string) {
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`)
+    if (!res.ok) {
+      throw new UnauthorizedException('Invalid Google token')
+    }
+    const payload = await res.json() as { sub: string; email: string; name: string; picture: string }
+
     let user = await this.userRepo.findOne({ where: { email: payload.email } })
 
     if (user) {

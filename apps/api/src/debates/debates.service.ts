@@ -75,13 +75,14 @@ export class DebatesService implements OnModuleInit {
     return { success: true, data: debate }
   }
 
-  async create(userId: string | null, body: { topic_id: string; participant_role?: 'creator' | 'opponent' }) {
+  async create(userId: string | null, body: { topic_id: string; participant_role?: 'creator' | 'opponent'; community_voting?: boolean }) {
     const role = body.participant_role ?? 'creator'
     const debate = this.debateRepo.create({
       topic_id: body.topic_id,
       creator_id: role === 'creator' ? userId : null,
       opponent_id: role === 'opponent' ? userId : null,
       status: 'pending',
+      community_voting: body.community_voting ?? false,
     })
     await this.debateRepo.save(debate)
     await this.topicsService.incrementDebateCount(body.topic_id)

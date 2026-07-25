@@ -136,7 +136,7 @@ export default function DebateScreen({ navigation }: { navigation: NavigationPro
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgPrimary },
   topBar: { backgroundColor: COLORS.bgElevated, paddingHorizontal: 16, paddingTop: 48, paddingBottom: 12, height: 56, justifyContent: 'center' },
-  header: { fontFamily: 'serif', fontSize: 20, fontWeight: '400', color: COLORS.textPrimary },
+  header: { fontFamily: 'DM Serif Display', fontSize: 20, fontWeight: '400', color: COLORS.textPrimary },
   listContent: { padding: 16 },
   card: { backgroundColor: COLORS.bgSurface, borderRadius: 12, padding: 16, marginBottom: 12 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
@@ -154,6 +154,6 @@ const styles = StyleSheet.create({
   skeletonTitle: { width: '70%', height: 18, backgroundColor: COLORS.borderSubtle, borderRadius: 4, marginBottom: 8 },
   skeletonMeta: { width: '40%', height: 14, backgroundColor: COLORS.borderSubtle, borderRadius: 4 },
   emptyState: { alignItems: 'center', marginTop: 64 },
-  emptyTitle: { fontFamily: 'serif', fontSize: 22, color: COLORS.textPrimary, marginBottom: 8 },
+  emptyTitle: { fontFamily: 'DM Serif Display', fontSize: 22, color: COLORS.textPrimary, marginBottom: 8 },
   emptyBody: { fontSize: 16, color: COLORS.textSecondary },
 })

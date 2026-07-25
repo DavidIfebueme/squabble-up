@@ -13,8 +13,8 @@ export const COLORS = {
 }
 
 export const FONTS = {
-  serif: { fontFamily: 'serif' },
-  sans: { fontFamily: 'sans-serif' },
+  serif: { fontFamily: 'DM Serif Display' },
+  sans: { fontFamily: 'Public Sans' },
   mono: { fontFamily: 'monospace' },
 }
 

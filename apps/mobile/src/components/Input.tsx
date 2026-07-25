@@ -1,4 +1,5 @@
 import { TextInput, StyleSheet } from 'react-native'
+import { COLORS } from '../lib/design'
 
 type Props = {
   placeholder: string
@@ -12,7 +13,7 @@ export default function Input({ placeholder, value, onChangeText, secureTextEntr
     <TextInput
       style={styles.input}
       placeholder={placeholder}
-      placeholderTextColor="#64748B"
+      placeholderTextColor={COLORS.textMuted}
       value={value}
       onChangeText={onChangeText}
       secureTextEntry={secureTextEntry}
@@ -22,5 +23,5 @@ export default function Input({ placeholder, value, onChangeText, secureTextEntr
 }
 
 const styles = StyleSheet.create({
-  input: { backgroundColor: '#1E293B', color: '#F1F5F9', padding: 16, borderRadius: 12, fontSize: 16 },
+  input: { backgroundColor: COLORS.bgSurface, color: COLORS.textPrimary, padding: 16, borderRadius: 12, fontSize: 16 },
 })

@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   roundLabel: { fontSize: 14, fontWeight: '700', color: COLORS.textSecondary, letterSpacing: 2 },
   timerLabel: { flex: 1, textAlign: 'center', fontSize: 14, color: COLORS.textSecondary },
   statusDot: { width: 12, height: 12, borderRadius: 6 },
-  prompt: { fontFamily: 'serif', fontSize: 16, color: COLORS.textPrimary, marginTop: 24, textAlign: 'center' },
+  prompt: { fontFamily: 'DM Serif Display', fontSize: 16, color: COLORS.textPrimary, marginTop: 24, textAlign: 'center' },
   opponentStatus: { position: 'absolute', bottom: 100 },
   opponentLabel: { fontSize: 14, color: COLORS.textSecondary },
   leaveButton: { position: 'absolute', bottom: 40 },
