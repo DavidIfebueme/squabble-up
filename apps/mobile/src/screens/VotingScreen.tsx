@@ -1,10 +1,20 @@
-import { useState, useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share } from 'react-native'
+import { useState, useEffect } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import { getDebate, triggerScoring } from '../lib/debates'
 import { getRoundsByDebate } from '../lib/rounds'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { ScreenProps } from '../lib/types'
 
-type Props = NativeStackScreenProps<{ Voting: { debateId: string }; Scoring: { debateId: string } }, 'Voting'>
+interface Debate {
+  id: string
+  topic_id: string
+  status: string
+}
+
+interface Round {
+  id: string
+  round_number: number
+  transcription: string | null
+}
 
 const COLORS = {
   bgPrimary: '#1E1E1E',
@@ -21,10 +31,10 @@ const COLORS = {
 
 const ROUND_NAMES = ['Opening', 'Rebuttal', 'Closing']
 
-export default function VotingScreen({ route, navigation }: Props) {
+export default function VotingScreen({ route, navigation }: ScreenProps<'Voting'>) {
   const { debateId } = route.params
-  const [debate, setDebate] = useState<any>(null)
-  const [rounds, setRounds] = useState<any[]>([])
+  const [debate, setDebate] = useState<Debate | null>(null)
+  const [rounds, setRounds] = useState<Round[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedWinner, setSelectedWinner] = useState<'creator' | 'opponent' | null>(null)
   const [expandedRound, setExpandedRound] = useState<string | null>(null)
@@ -141,7 +151,7 @@ export default function VotingScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgPrimary, padding: 24 },
-  header: { fontFamily: 'serif', fontSize: 24, fontWeight: '700', color: COLORS.textPrimary, marginTop: 48, marginBottom: 16 },
+  header: { fontFamily: 'DM Serif Display', fontSize: 24, fontWeight: '700', color: COLORS.textPrimary, marginTop: 48, marginBottom: 16 },
   topicCard: { backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginBottom: 24 },
   topicTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 12 },
