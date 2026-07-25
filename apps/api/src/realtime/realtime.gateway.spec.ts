@@ -7,6 +7,8 @@ describe('RealtimeGateway', () => {
   let mockServer: Partial<Server>
 
   beforeEach(async () => {
+    jest.useFakeTimers()
+
     mockServer = {
       to: jest.fn().mockReturnThis(),
       emit: jest.fn(),
@@ -18,6 +20,10 @@ describe('RealtimeGateway', () => {
 
     gateway = module.get<RealtimeGateway>(RealtimeGateway)
     gateway.server = mockServer as Server
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
   })
 
   it('should be defined', () => {
@@ -39,6 +45,16 @@ describe('RealtimeGateway', () => {
       }))
       expect(result).toEqual({ success: true, room: 'debate:debate-1' })
     })
+
+    it('should clear reconnect timer when client reconnects', () => {
+      const mockClient = { join: jest.fn(), id: 'client-1' } as unknown as Socket
+      const timer = jest.fn()
+      gateway['reconnectTimers'] = new Map([['client-1', timer as any]])
+
+      gateway.handleJoinDebate(mockClient, { debate_id: 'debate-1' })
+
+      expect(gateway['reconnectTimers'].has('client-1')).toBe(false)
+    })
   })
 
   describe('handleLeaveDebate', () => {
@@ -55,6 +71,40 @@ describe('RealtimeGateway', () => {
         user_id: 'client-1',
       }))
       expect(result).toEqual({ success: true })
+    })
+  })
+
+  describe('handleHeartbeat', () => {
+    it('should update last seen timestamp', () => {
+      const mockClient = { id: 'client-1' } as unknown as Socket
+      gateway['clientHeartbeats'] = new Map()
+
+      gateway.handleHeartbeat(mockClient, { debate_id: 'debate-1' })
+
+      const lastSeen = gateway['clientHeartbeats'].get('client-1')
+      expect(lastSeen).toBeDefined()
+      expect(Date.now() - lastSeen!).toBeLessThan(100)
+    })
+
+    it('should emit heartbeat-ack', () => {
+      const mockClient = { id: 'client-1' } as unknown as Socket
+
+      gateway.handleHeartbeat(mockClient, { debate_id: 'debate-1' })
+
+      expect(mockServer.emit).toHaveBeenCalledWith('heartbeat-ack', expect.objectContaining({
+        debate_id: 'debate-1',
+        user_id: 'client-1',
+      }))
+    })
+
+    it('should clear reconnect timer if client was disconnecting', () => {
+      const mockClient = { id: 'client-1' } as unknown as Socket
+      const timer = jest.fn()
+      gateway['reconnectTimers'] = new Map([['client-1', timer as any]])
+
+      gateway.handleHeartbeat(mockClient, { debate_id: 'debate-1' })
+
+      expect(gateway['reconnectTimers'].has('client-1')).toBe(false)
     })
   })
 
@@ -76,12 +126,20 @@ describe('RealtimeGateway', () => {
       expect(emittedPayload.timestamp).toBeDefined()
       expect(new Date(emittedPayload.timestamp).getTime()).not.toBeNaN()
     })
+
+    it('should emit to room even if no clients are connected', () => {
+      gateway.emitDebateEvent('debate-nonexistent', 'test-event', {})
+
+      expect(mockServer.to).toHaveBeenCalledWith('debate:debate-nonexistent')
+      expect(mockServer.emit).toHaveBeenCalledWith('test-event', expect.objectContaining({
+        debate_id: 'debate-nonexistent',
+      }))
+    })
   })
 
   describe('handleDisconnect', () => {
     it('should emit opponent-disconnected when a participant disconnects', () => {
       const mockClient = { id: 'client-1' } as unknown as Socket
-      jest.spyOn(mockClient, 'id' as any).mockReturnValue('client-1')
 
       gateway['clientDebates'] = new Map([['client-1', 'debate-1']])
 
@@ -91,6 +149,51 @@ describe('RealtimeGateway', () => {
       expect(mockServer.emit).toHaveBeenCalledWith('opponent-disconnected', expect.objectContaining({
         debate_id: 'debate-1',
       }))
+    })
+
+    it('should emit reconnect-window on disconnect', () => {
+      const mockClient = { id: 'client-1' } as unknown as Socket
+      gateway['clientDebates'] = new Map([['client-1', 'debate-1']])
+
+      gateway.handleDisconnect(mockClient)
+
+      expect(mockServer.emit).toHaveBeenCalledWith('reconnect-window', expect.objectContaining({
+        debate_id: 'debate-1',
+        remaining_ms: 120_000,
+      }))
+    })
+
+    it('should emit debate-abandoned after reconnect timeout', () => {
+      const mockClient = { id: 'client-1' } as unknown as Socket
+      gateway['clientDebates'] = new Map([['client-1', 'debate-1']])
+
+      gateway.handleDisconnect(mockClient)
+
+      jest.advanceTimersByTime(120_000)
+
+      expect(mockServer.emit).toHaveBeenCalledWith('debate-abandoned', expect.objectContaining({
+        debate_id: 'debate-1',
+        reason: 'reconnect_timeout',
+      }))
+    })
+
+    it('should clean up client tracking after disconnect', () => {
+      const mockClient = { id: 'client-1' } as unknown as Socket
+      gateway['clientDebates'] = new Map([['client-1', 'debate-1']])
+      gateway['clientHeartbeats'] = new Map([['client-1', Date.now()]])
+
+      gateway.handleDisconnect(mockClient)
+
+      expect(gateway['clientDebates'].has('client-1')).toBe(false)
+      expect(gateway['clientHeartbeats'].has('client-1')).toBe(false)
+    })
+
+    it('should do nothing if client was not in a debate', () => {
+      const mockClient = { id: 'client-unknown' } as unknown as Socket
+
+      gateway.handleDisconnect(mockClient)
+
+      expect(mockServer.emit).not.toHaveBeenCalled()
     })
   })
 })

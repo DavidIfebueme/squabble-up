@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'
 import VoiceRecorder from '../components/VoiceRecorder'
 import { createRound, updateRound } from '../lib/rounds'
 import { getDebate } from '../lib/debates'
-import { joinDebateRoom, leaveDebateRoom, onDebateEvent } from '../lib/socket'
+import { joinDebateRoom, leaveDebateRoom, onDebateEvent, startHeartbeat } from '../lib/socket'
 import { ROUND_DURATIONS, ROUND_NUMBER_TO_TYPE } from '@squabble-up/shared'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
@@ -41,6 +41,7 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
   const [roundId, setRoundId] = useState<string | null>(null)
   const [creating, setCreating] = useState(true)
   const [opponentDisconnected, setOpponentDisconnected] = useState(false)
+  const [reconnectRemaining, setReconnectRemaining] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -79,6 +80,7 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
 
   useEffect(() => {
     joinDebateRoom(debateId)
+    startHeartbeat(debateId)
     return () => { leaveDebateRoom(debateId) }
   }, [debateId])
 
@@ -95,10 +97,19 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
     })
     const cleanup3 = onDebateEvent('opponent-disconnected', () => {
       setOpponentDisconnected(true)
-      Alert.alert('Opponent Disconnected', 'Waiting for them to return...')
+      setReconnectRemaining(120)
     })
-    const cleanup4 = onDebateEvent('debate-completed', () => {
+    const cleanup4 = onDebateEvent('reconnect-window', (data: any) => {
+      const remaining = data.remaining_ms ?? 0
+      setReconnectRemaining(Math.ceil(remaining / 1000))
+    })
+    const cleanup5 = onDebateEvent('debate-completed', () => {
       navigation.replace('Scoring', { debateId })
+    })
+    const cleanup6 = onDebateEvent('debate-abandoned', () => {
+      Alert.alert('Debate Abandoned', 'Your opponent did not reconnect in time. You win by default.', [
+        { text: 'OK', onPress: () => navigation.replace('Scoring', { debateId }) },
+      ])
     })
 
     return () => {
@@ -106,6 +117,8 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
       cleanup2()
       cleanup3()
       cleanup4()
+      cleanup5()
+      cleanup6()
     }
   }, [debateId, roundNumber, navigation])
 
@@ -125,6 +138,14 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
     : opponentStatus === 'recording' ? COLORS.accentAmber
     : COLORS.textMuted
 
+  const opponentStatusText = opponentDisconnected
+    ? reconnectRemaining !== null
+      ? `Opponent disconnected. Reconnecting... ${Math.floor(reconnectRemaining / 60)}:${String(reconnectRemaining % 60).padStart(2, '0')}`
+      : 'Opponent disconnected. Waiting...'
+    : opponentStatus === 'recording' ? 'Opponent: Recording...'
+    : opponentStatus === 'done' ? 'Opponent: Done'
+    : 'Opponent: Waiting...'
+
   if (creating) return <View style={styles.container} />
 
   return (
@@ -140,11 +161,7 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
       <Text style={styles.prompt}>{label.prompt}</Text>
 
       <View style={styles.opponentStatus}>
-        <Text style={styles.opponentLabel}>
-          {opponentDisconnected
-            ? 'Opponent disconnected. Waiting...'
-            : opponentStatus === 'done' ? 'Opponent: Done' : 'Opponent: Waiting...'}
-        </Text>
+        <Text style={styles.opponentLabel}>{opponentStatusText}</Text>
       </View>
 
       <TouchableOpacity style={styles.leaveButton} onPress={() => navigation.goBack()}>

@@ -5,6 +5,7 @@ import { RoundsService } from './rounds.service'
 import { Round } from './round.entity'
 import { Debate } from '../debates/debate.entity'
 import { DebatesService } from '../debates/debates.service'
+import { RealtimeGateway } from '../realtime/realtime.gateway'
 import { Repository, UpdateResult } from 'typeorm'
 
 describe('RoundsService', () => {
@@ -55,6 +56,12 @@ describe('RoundsService', () => {
           provide: DebatesService,
           useValue: {
             findById: jest.fn(),
+          },
+        },
+        {
+          provide: RealtimeGateway,
+          useValue: {
+            emitDebateEvent: jest.fn(),
           },
         },
       ],

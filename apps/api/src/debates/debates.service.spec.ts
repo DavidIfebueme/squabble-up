@@ -5,6 +5,7 @@ import { DebatesService } from './debates.service'
 import { Debate } from './debate.entity'
 import { GuestSession } from './guest-session.entity'
 import { TopicsService } from '../topics/topics.service'
+import { RealtimeGateway } from '../realtime/realtime.gateway'
 import { Repository } from 'typeorm'
 
 describe('DebatesService', () => {
@@ -51,6 +52,12 @@ describe('DebatesService', () => {
           provide: TopicsService,
           useValue: {
             incrementDebateCount: jest.fn(),
+          },
+        },
+        {
+          provide: RealtimeGateway,
+          useValue: {
+            emitDebateEvent: jest.fn(),
           },
         },
       ],

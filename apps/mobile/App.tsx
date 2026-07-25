@@ -19,7 +19,7 @@ type AppStackParamList = RootStackParamList & {
   CreateDebate: undefined
   DebateLobby: { debateId: string; side?: string }
   GuestDebate: undefined
-  Scoring: undefined
+  Scoring: { debateId: string }
   Auth: undefined
 }
 
