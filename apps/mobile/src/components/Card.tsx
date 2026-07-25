@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native'
+import { COLORS } from '../lib/design'
 
 type Props = {
   title: string
@@ -17,7 +18,7 @@ export default function Card({ title, subtitle, children }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#1E293B', padding: 16, borderRadius: 12, marginBottom: 12 },
-  title: { fontSize: 16, fontWeight: '600', color: '#F1F5F9' },
-  subtitle: { fontSize: 12, color: '#64748B', marginTop: 4 },
+  card: { backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginBottom: 12 },
+  title: { fontSize: 16, fontWeight: '600', color: COLORS.textPrimary },
+  subtitle: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
 })

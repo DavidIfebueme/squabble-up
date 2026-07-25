@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native'
+import { COLORS } from '../lib/design'
 
 type Props = {
   label: string
@@ -25,8 +26,8 @@ export default function ScoreBar({ label, score, maxScore = 10 }: Props) {
 const styles = StyleSheet.create({
   container: { marginBottom: 12 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  label: { fontSize: 14, color: '#94A3B8' },
-  score: { fontSize: 14, fontWeight: '700', color: '#F1F5F9' },
-  track: { height: 8, backgroundColor: '#334155', borderRadius: 4, overflow: 'hidden' },
-  fill: { height: '100%', backgroundColor: '#3B82F6', borderRadius: 4 },
+  label: { fontSize: 14, color: COLORS.textSecondary },
+  score: { fontSize: 14, fontWeight: '700', color: COLORS.textPrimary },
+  track: { height: 8, backgroundColor: COLORS.borderSubtle, borderRadius: 4, overflow: 'hidden' },
+  fill: { height: '100%', backgroundColor: COLORS.accentAmber, borderRadius: 4 },
 })

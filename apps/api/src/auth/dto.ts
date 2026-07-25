@@ -25,16 +25,5 @@ export class LoginDto {
 
 export class GoogleAuthDto {
   @IsString()
-  sub: string
-
-  @IsEmail()
-  email: string
-
-  @IsString()
-  @MaxLength(100)
-  name: string
-
-  @IsString()
-  @MaxLength(500)
-  picture: string
+  idToken: string
 }

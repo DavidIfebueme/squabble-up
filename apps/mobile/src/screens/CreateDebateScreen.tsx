@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
   stepLine: { width: 24, height: 2, backgroundColor: COLORS.borderSubtle, marginHorizontal: 8 },
   stepLineActive: { backgroundColor: COLORS.accentAmber },
   content: { flex: 1, padding: 16 },
-  heading: { fontFamily: 'serif', fontSize: 22, color: COLORS.textPrimary, marginBottom: 16 },
+  heading: { fontFamily: 'DM Serif Display', fontSize: 22, color: COLORS.textPrimary, marginBottom: 16 },
   searchInput: { backgroundColor: COLORS.bgSurface, color: COLORS.textPrimary, padding: 16, borderRadius: 12, fontSize: 16, marginBottom: 16 },
   topicRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginBottom: 8 },
   topicRowSelected: { borderWidth: 2, borderColor: COLORS.accentAmber },

@@ -47,7 +47,7 @@ export class AuthController {
     @Body() body: GoogleAuthDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.googleAuth(body)
+    const result = await this.authService.googleAuth(body.idToken)
     res.cookie('refresh_token', result.refresh_token, REFRESH_COOKIE_OPTIONS)
     return { access_token: result.access_token, user: result.user }
   }

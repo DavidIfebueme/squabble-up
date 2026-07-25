@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Share, ActivityIndicator, Platform } from 'react-native'
 import ViewShot, { ViewShotRef } from 'react-native-view-shot'
 import { getScorecard, ScorecardData } from '../lib/debates'
+import { getVotes } from '../lib/votes'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
 type Props = NativeStackScreenProps<{ Scoring: { debateId: string } }, 'Scoring'>
@@ -26,15 +27,28 @@ export default function ScoringScreen({ route, navigation }: Props) {
   const [scorecard, setScorecard] = useState<ScorecardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [voteFor, setVoteFor] = useState(0)
+  const [voteAgainst, setVoteAgainst] = useState(0)
+  const [totalVotes, setTotalVotes] = useState(0)
   const cardRef = useRef<ViewShotRef>(null)
 
   useEffect(() => {
     let cancelled = false
-    const fetchScorecard = async () => {
+    const fetchData = async () => {
       try {
-        const result = await getScorecard(debateId)
-        if (!cancelled && result.success) {
-          setScorecard(result.data)
+        const [scorecardResult, votesResult] = await Promise.all([
+          getScorecard(debateId),
+          getVotes(debateId),
+        ])
+        if (!cancelled && scorecardResult.success) {
+          setScorecard(scorecardResult.data)
+        }
+        if (!cancelled && votesResult?.data) {
+          const forCount = votesResult.data.filter(v => v.vote_type === 'creator').length
+          const againstCount = votesResult.data.length - forCount
+          setVoteFor(forCount)
+          setVoteAgainst(againstCount)
+          setTotalVotes(votesResult.data.length)
         }
       } catch {
         if (!cancelled) setError('Could not load scorecard.')
@@ -42,7 +56,7 @@ export default function ScoringScreen({ route, navigation }: Props) {
         if (!cancelled) setLoading(false)
       }
     }
-    fetchScorecard()
+    fetchData()
     return () => { cancelled = true }
   }, [debateId])
 
@@ -138,17 +152,20 @@ export default function ScoringScreen({ route, navigation }: Props) {
           <Text style={styles.reasoning}>"{scorecard.ai_scores.reasoning}"</Text>
         ) : null}
 
-        <View style={styles.communitySection}>
-          <Text style={styles.communityTitle}>Community Vote</Text>
-          <View style={styles.splitBar}>
-            <View style={[styles.splitBarFill, { width: '60%', backgroundColor: COLORS.accentAmber }]} />
-            <View style={[styles.splitBarFill, { width: '40%', backgroundColor: COLORS.textMuted }]} />
+        {totalVotes > 0 ? (
+          <View style={styles.communitySection}>
+            <Text style={styles.communityTitle}>Community Vote</Text>
+            <View style={styles.splitBar}>
+              <View style={[styles.splitBarFill, { width: `${(voteFor / totalVotes) * 100}%`, backgroundColor: COLORS.accentAmber }]} />
+              <View style={[styles.splitBarFill, { width: `${(voteAgainst / totalVotes) * 100}%`, backgroundColor: COLORS.textMuted }]} />
+            </View>
+            <View style={styles.splitLabels}>
+              <Text style={styles.splitLabel}>FOR: {Math.round((voteFor / totalVotes) * 100)}% ({voteFor})</Text>
+              <Text style={styles.splitLabel}>AGAINST: {Math.round((voteAgainst / totalVotes) * 100)}% ({voteAgainst})</Text>
+            </View>
+            <Text style={styles.totalVotes}>{totalVotes} vote{totalVotes !== 1 ? 's' : ''} cast</Text>
           </View>
-          <View style={styles.splitLabels}>
-            <Text style={styles.splitLabel}>FOR: 60%</Text>
-            <Text style={styles.splitLabel}>AGAINST: 40%</Text>
-          </View>
-        </View>
+        ) : null}
 
         <Text style={styles.footer}>Debate anything. Fairly scored.</Text>
         <Text style={styles.url}>squabbleup://debate/{debateId}</Text>
@@ -202,4 +219,5 @@ const styles = StyleSheet.create({
   splitBarFill: { height: '100%' },
   splitLabels: { flexDirection: 'row', justifyContent: 'space-between' },
   splitLabel: { fontSize: 12, color: COLORS.textMuted },
+  totalVotes: { fontSize: 12, color: COLORS.textMuted, textAlign: 'center', marginTop: 4 },
 })

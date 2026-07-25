@@ -8,8 +8,8 @@ export const DEBATE_STATUSES: Record<DebateStatus, DebateStatus> = {
   scoring_failed: 'scoring_failed',
 }
 
-export const COMMUNITY_WEIGHT = 0.6
-export const AI_WEIGHT = 0.4
+export const COMMUNITY_WEIGHT = 0.3
+export const AI_WEIGHT = 0.7
 export const MAX_SCORING_TIME_MS = 10000
 export const GUEST_SESSION_TTL_HOURS = 24
 export const AUDIO_RETENTION_DAYS = 30

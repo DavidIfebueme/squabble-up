@@ -36,6 +36,7 @@ describe('UsersService', () => {
     created_at: new Date(),
     completed_at: new Date(),
     ai_scores: null,
+    community_voting: false,
     ...overrides,
   })
 

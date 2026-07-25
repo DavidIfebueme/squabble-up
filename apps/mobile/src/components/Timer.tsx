@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Text, StyleSheet } from 'react-native'
+import { COLORS } from '../lib/design'
 
 type Props = {
   seconds: number
@@ -30,5 +31,5 @@ export default function Timer({ seconds, onComplete, label }: Props) {
 }
 
 const styles = StyleSheet.create({
-  timer: { fontSize: 24, fontWeight: '700', color: '#F8FAFC', textAlign: 'center', fontVariant: ['tabular-nums'] },
+  timer: { fontSize: 24, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', fontVariant: ['tabular-nums'] },
 })

@@ -11,6 +11,14 @@ import { Repository, UpdateResult } from 'typeorm'
 
 jest.mock('bcrypt')
 
+const mockVerifyIdToken = jest.fn()
+
+jest.mock('google-auth-library', () => ({
+  OAuth2Client: jest.fn().mockImplementation(() => ({
+    verifyIdToken: mockVerifyIdToken,
+  })),
+}))
+
 describe('AuthService', () => {
   let service: AuthService
   let userRepo: jest.Mocked<Repository<User>>
@@ -219,18 +227,30 @@ describe('AuthService', () => {
   })
 
   describe('googleAuth', () => {
+    const mockTokenResponse = {
+      sub: 'google-uid-456',
+      email: 'test@example.com',
+      name: 'Test User',
+      picture: 'https://example.com/avatar.jpg',
+    }
+
+    beforeEach(() => {
+      mockVerifyIdToken.mockResolvedValue({
+        getPayload: () => mockTokenResponse,
+      })
+    })
+
+    afterEach(() => {
+      mockVerifyIdToken.mockReset()
+    })
+
     it('creates new user with auth_provider=google and verified=true', async () => {
       userRepo.findOne.mockResolvedValue(null)
       userRepo.create.mockReturnValue(mockGoogleUser)
       userRepo.save.mockResolvedValue(mockGoogleUser)
       jwtService.sign.mockReturnValue('google-token')
 
-      const result = await service.googleAuth({
-        sub: 'google-uid-456',
-        email: 'test@example.com',
-        name: 'Test User',
-        picture: 'https://example.com/avatar.jpg',
-      })
+      const result = await service.googleAuth('valid-google-id-token')
 
       expect(userRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -246,12 +266,7 @@ describe('AuthService', () => {
       userRepo.findOne.mockResolvedValue(mockGoogleUser)
       jwtService.sign.mockReturnValue('google-token')
 
-      const result = await service.googleAuth({
-        sub: 'google-uid-456',
-        email: 'test@example.com',
-        name: 'Test User',
-        picture: 'https://example.com/avatar.jpg',
-      })
+      const result = await service.googleAuth('valid-google-id-token')
 
       expect(result.user.auth_provider).toBe('google')
     })
@@ -261,12 +276,7 @@ describe('AuthService', () => {
       userRepo.save.mockResolvedValue({ ...mockUser, auth_provider: 'google', verified: true })
       jwtService.sign.mockReturnValue('merged-token')
 
-      const result = await service.googleAuth({
-        sub: 'google-uid-456',
-        email: 'test@example.com',
-        name: 'Test User',
-        picture: 'https://example.com/avatar.jpg',
-      })
+      const result = await service.googleAuth('valid-google-id-token')
 
       expect(userRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -283,14 +293,16 @@ describe('AuthService', () => {
       userRepo.save.mockResolvedValue(mockGoogleUser)
       jwtService.sign.mockReturnValue('google-token')
 
-      await service.googleAuth({
-        sub: 'google-uid-456',
-        email: 'test@example.com',
-        name: 'Test User',
-        picture: 'https://example.com/avatar.jpg',
-      })
+      await service.googleAuth('valid-google-id-token')
 
       expect(emailService.sendVerificationEmail).not.toHaveBeenCalled()
+    })
+
+    it('throws UnauthorizedException when verifyIdToken rejects', async () => {
+      mockVerifyIdToken.mockRejectedValue(new Error('Invalid token'))
+      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'))
+
+      await expect(service.googleAuth('bad-token')).rejects.toThrow(UnauthorizedException)
     })
   })
 

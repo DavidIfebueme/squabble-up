@@ -1,7 +1,7 @@
 import { io, Socket } from 'socket.io-client'
 import type { DebateEvent } from './types'
 
-const SOCKET_URL = 'http://localhost:3000'
+const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3000'
 const HEARTBEAT_INTERVAL_MS = 30_000
 
 let socket: Socket | null = null

@@ -149,7 +149,7 @@ export default function HomeScreen({ navigation }: { navigation: NavigationProp 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgPrimary },
   topBar: { backgroundColor: COLORS.bgElevated, paddingHorizontal: 16, paddingTop: 48, paddingBottom: 12, height: 56, justifyContent: 'center' },
-  wordmark: { fontFamily: 'serif', fontSize: 20, fontWeight: '400', color: COLORS.textPrimary },
+  wordmark: { fontFamily: 'DM Serif Display', fontSize: 20, fontWeight: '400', color: COLORS.textPrimary },
   chipList: { maxHeight: 48, paddingHorizontal: 16, paddingVertical: 8 },
   chip: { backgroundColor: COLORS.bgSurface, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, marginRight: 8, height: 36, justifyContent: 'center' },
   chipSelected: { backgroundColor: COLORS.accentAmber },
@@ -168,6 +168,6 @@ const styles = StyleSheet.create({
   skeletonTitle: { width: '80%', height: 18, backgroundColor: COLORS.borderSubtle, borderRadius: 4, marginBottom: 8 },
   skeletonMeta: { width: '40%', height: 14, backgroundColor: COLORS.borderSubtle, borderRadius: 4 },
   emptyState: { alignItems: 'center', marginTop: 64 },
-  emptyTitle: { fontFamily: 'serif', fontSize: 22, color: COLORS.textPrimary, marginBottom: 8 },
+  emptyTitle: { fontFamily: 'DM Serif Display', fontSize: 22, color: COLORS.textPrimary, marginBottom: 8 },
   emptyBody: { fontSize: 16, color: COLORS.textSecondary },
 })

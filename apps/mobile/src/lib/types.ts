@@ -25,3 +25,14 @@ export interface DebateEvent {
   remaining_ms?: number
   reason?: string
 }
+
+export interface Vote {
+  id: string
+  debate_id: string
+  voter_id: string
+  vote_type: 'creator' | 'opponent'
+  logic_score: number
+  evidence_score: number
+  delivery_score: number
+  created_at: string
+}

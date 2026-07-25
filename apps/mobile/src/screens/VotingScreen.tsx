@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native'
 import { getDebate, triggerScoring } from '../lib/debates'
 import { getRoundsByDebate } from '../lib/rounds'
+import { submitVote } from '../lib/votes'
 import type { ScreenProps } from '../lib/types'
 
 interface Debate {
@@ -65,6 +66,19 @@ export default function VotingScreen({ route, navigation }: ScreenProps<'Voting'
   const handleScoring = async () => {
     setScoring(true)
     try {
+      if (selectedWinner) {
+        try {
+          await submitVote({
+            debate_id: debateId,
+            vote_type: selectedWinner,
+            logic_score: 5,
+            evidence_score: 5,
+            delivery_score: 5,
+          })
+        } catch {
+          // Vote submission is optional — continue to scoring
+        }
+      }
       await triggerScoring(debateId)
       navigation.replace('Scoring', { debateId })
     } catch {

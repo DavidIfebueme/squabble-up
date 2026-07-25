@@ -3,18 +3,13 @@ import { JwtService } from '@nestjs/jwt'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import * as bcrypt from 'bcrypt'
+import { OAuth2Client } from 'google-auth-library'
 import { User } from '../users/user.entity'
 import { EmailService } from '../email/email.service'
 import { RedisService } from '../redis/redis.service'
 
 const SALT_ROUNDS = 12
-
-interface GooglePayload {
-  sub: string
-  email: string
-  name: string
-  picture: string
-}
+const GOOGLE_TOKEN_VERIFY_TIMEOUT_MS = 5000
 
 @Injectable()
 export class AuthService {
@@ -24,7 +19,14 @@ export class AuthService {
     private readonly userRepo: Repository<User>,
     private readonly emailService: EmailService,
     private readonly redisService: RedisService,
-  ) {}
+  ) {
+    this.googleClient = new OAuth2Client(
+      process.env.GOOGLE_CLIENT_ID || '',
+      process.env.GOOGLE_CLIENT_SECRET || '',
+    )
+  }
+
+  private readonly googleClient: OAuth2Client
 
   async register(email: string, password: string, display_name: string) {
     const existing = await this.userRepo.findOne({ where: { email } })
@@ -74,7 +76,30 @@ export class AuthService {
     return this.generateTokenResponse(user)
   }
 
-  async googleAuth(payload: GooglePayload) {
+  async googleAuth(idToken: string) {
+    let payload: { sub: string; email: string; name: string; picture: string }
+
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), GOOGLE_TOKEN_VERIFY_TIMEOUT_MS)
+
+      const ticket = await this.googleClient.verifyIdToken({
+        idToken,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      })
+
+      clearTimeout(timeout)
+      payload = ticket.getPayload() as { sub: string; email: string; name: string; picture: string }
+      if (!payload || !payload.email) {
+        throw new UnauthorizedException('Invalid Google token')
+      }
+    } catch {
+      payload = await this.verifyGoogleTokenFallback(idToken)
+      if (!payload || !payload.email) {
+        throw new UnauthorizedException('Invalid Google token')
+      }
+    }
+
     let user = await this.userRepo.findOne({ where: { email: payload.email } })
 
     if (user) {
@@ -173,5 +198,28 @@ export class AuthService {
   private sanitizeUser(user: User) {
     const { id, email, display_name, avatar_url, elo_score, verified, auth_provider } = user
     return { id, email, display_name, avatar_url, elo_score, verified, auth_provider }
+  }
+
+  private async verifyGoogleTokenFallback(idToken: string) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), GOOGLE_TOKEN_VERIFY_TIMEOUT_MS)
+    try {
+      const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`, {
+        signal: controller.signal,
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ id_token: idToken }),
+      })
+      if (!res.ok) {
+        throw new UnauthorizedException('Invalid Google token')
+      }
+      const json = await res.json()
+      return { sub: json.sub, email: json.email, name: json.name || '', picture: json.picture || '' }
+    } catch (e) {
+      if (e instanceof UnauthorizedException) throw e
+      throw new UnauthorizedException('Invalid Google token')
+    } finally {
+      clearTimeout(timeout)
+    }
   }
 }

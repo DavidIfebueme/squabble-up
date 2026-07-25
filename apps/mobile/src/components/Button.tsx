@@ -1,4 +1,5 @@
 import { TouchableOpacity, Text, StyleSheet } from 'react-native'
+import { COLORS } from '../lib/design'
 
 type Props = {
   title: string
@@ -19,8 +20,8 @@ export default function Button({ title, onPress, variant = 'primary' }: Props) {
 
 const styles = StyleSheet.create({
   base: { padding: 16, borderRadius: 12, alignItems: 'center' },
-  primary: { backgroundColor: '#3B82F6' },
-  secondary: { borderWidth: 1, borderColor: '#334155', backgroundColor: 'transparent' },
-  text: { color: '#FFFFFF', fontWeight: '700', fontSize: 16 },
-  secondaryText: { color: '#94A3B8' },
+  primary: { backgroundColor: COLORS.accentAmber },
+  secondary: { borderWidth: 1, borderColor: COLORS.borderSubtle, backgroundColor: 'transparent' },
+  text: { color: COLORS.bgPrimary, fontWeight: '700', fontSize: 16 },
+  secondaryText: { color: COLORS.textSecondary },
 })

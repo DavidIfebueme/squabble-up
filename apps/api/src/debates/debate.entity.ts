@@ -20,6 +20,9 @@ export class Debate {
   @Column({ nullable: true })
   winner_id: string | null
 
+  @Column({ default: false })
+  community_voting: boolean
+
   @CreateDateColumn()
   created_at: Date
 
