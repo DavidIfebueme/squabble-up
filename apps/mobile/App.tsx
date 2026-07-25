@@ -22,6 +22,17 @@ export type AppStackParamList = RootStackParamList
 
 const Stack = createNativeStackNavigator<AppStackParamList>()
 
+const linking = {
+  prefixes: ['squabbleup://'],
+  config: {
+    screens: {
+      DebateLobby: 'debate/:debateId',
+      Scoring: 'debate/:debateId/results',
+      DebateRound: 'debate/:debateId/round/:roundNumber',
+    },
+  },
+}
+
 function HomeTabs() {
   return (
     <Tab.Navigator screenOptions={{ headerShown: false }}>
@@ -44,7 +55,7 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <StatusBar style="auto" />
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Main" component={HomeTabs} />
