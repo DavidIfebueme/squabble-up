@@ -53,7 +53,8 @@
           "speechRecognitionPermission": "Allow Squabble Up to recognize your speech for transcription"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {
