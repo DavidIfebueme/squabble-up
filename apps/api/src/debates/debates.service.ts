@@ -250,6 +250,7 @@ export class DebatesService implements OnModuleInit {
         creator_id: debate.creator_id,
         opponent_id: debate.opponent_id,
         completed_at: debate.completed_at,
+        ai_scores: debate.ai_scores,
       },
     }
   }

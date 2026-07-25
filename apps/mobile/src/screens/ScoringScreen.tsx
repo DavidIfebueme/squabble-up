@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Share, ActivityIndicator } from 'react-native'
-import ViewShot from 'react-native-view-shot'
-import { getScorecard } from '../lib/debates'
-import { ROUND_DURATIONS, ROUND_NUMBER_TO_TYPE } from '@squabble-up/shared'
+import ViewShot, { ViewShotRef } from 'react-native-view-shot'
+import { getScorecard, ScorecardData } from '../lib/debates'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
 
 type Props = NativeStackScreenProps<{ Scoring: { debateId: string } }, 'Scoring'>
@@ -24,10 +23,10 @@ const CATEGORIES = ['logic', 'persuasiveness', 'evidence', 'delivery'] as const
 
 export default function ScoringScreen({ route, navigation }: Props) {
   const { debateId } = route.params
-  const [scorecard, setScorecard] = useState<any>(null)
+  const [scorecard, setScorecard] = useState<ScorecardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const cardRef = useRef<any>(null)
+  const cardRef = useRef<ViewShotRef>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -111,15 +110,22 @@ export default function ScoringScreen({ route, navigation }: Props) {
         <Text style={styles.winnerText}>{winner} wins!</Text>
 
         <View style={styles.scoresContainer}>
-          {CATEGORIES.map(cat => (
-            <View key={cat} style={styles.scoreRow}>
-              <Text style={styles.categoryLabel}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</Text>
-              <View style={styles.barContainer}>
-                <View style={[styles.bar, { width: '50%', backgroundColor: COLORS.accentAmber }]} />
-                <View style={[styles.bar, { width: '50%', backgroundColor: COLORS.textMuted }]} />
+          {CATEGORIES.map(cat => {
+            const creatorScore = scorecard.ai_scores?.creator[cat] ?? 50
+            const opponentScore = scorecard.ai_scores?.opponent[cat] ?? 50
+            const total = creatorScore + opponentScore || 1
+            const creatorWidth = `${(creatorScore / total) * 100}%` as const
+            const opponentWidth = `${(opponentScore / total) * 100}%` as const
+            return (
+              <View key={cat} style={styles.scoreRow}>
+                <Text style={styles.categoryLabel}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</Text>
+                <View style={styles.barContainer}>
+                  <View style={[styles.bar, { width: creatorWidth, backgroundColor: COLORS.accentAmber }]} />
+                  <View style={[styles.bar, { width: opponentWidth, backgroundColor: COLORS.textMuted }]} />
+                </View>
               </View>
-            </View>
-          ))}
+            )
+          })}
         </View>
 
         <Text style={styles.footer}>Debate anything. Fairly scored.</Text>

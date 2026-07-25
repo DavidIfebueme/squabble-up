@@ -1,5 +1,5 @@
 import api from './api'
-import type { Debate, PaginatedResponse } from '@squabble-up/shared'
+import type { Debate, DebateScores, PaginatedResponse, Topic } from '@squabble-up/shared'
 
 export async function getOpenDebates(params?: { page?: number; limit?: number }) {
   const { data } = await api.get<PaginatedResponse<Debate>>('/debates/open', { params })
@@ -31,7 +31,17 @@ export async function triggerScoring(id: string) {
   return data
 }
 
+export interface ScorecardData {
+  debate_id: string
+  topic: Topic
+  winner_id: string | null
+  creator_id: string | null
+  opponent_id: string | null
+  completed_at: string | null
+  ai_scores: DebateScores | null
+}
+
 export async function getScorecard(id: string) {
-  const { data } = await api.get<{ success: boolean; data: any }>(`/debates/${id}/scorecard`)
+  const { data } = await api.get<{ success: boolean; data: ScorecardData }>(`/debates/${id}/scorecard`)
   return data
 }
