@@ -26,16 +26,21 @@ export class ScoringProcessor extends WorkerHost {
     const { debateId } = job.data
 
     try {
-      const aggregateScores = await this.votesService.getAggregateScores(debateId)
       const debateResult = await this.debatesService.findById(debateId)
       const debate = debateResult.data
       if (!debate) return
+      if (debate.status !== 'active') return
 
       const topicResult = await this.topicsService.findById(debate.topic_id)
-      const topic = topicResult.data
+      if (!topicResult.data) return
 
       const roundsResult = await this.roundsService.findByDebate(debateId)
       const rounds = roundsResult.data
+      if (!rounds || rounds.length < 6) return
+
+      const creatorId = debate.creator_id
+      const opponentId = debate.opponent_id
+      if (!creatorId || !opponentId) return
 
       const transcripts = rounds.map(r => ({
         round_number: r.round_number,
@@ -43,10 +48,17 @@ export class ScoringProcessor extends WorkerHost {
         transcription: r.transcription || '',
       }))
 
-      const aiScores = await this.geminiService.scoreDebate(topic.title, transcripts)
+      const aiScores = await this.geminiService.scoreDebate(
+        topicResult.data.title,
+        transcripts,
+        creatorId,
+        opponentId,
+      )
 
       const creatorAi = (aiScores.creator.logic + aiScores.creator.persuasiveness + aiScores.creator.evidence + aiScores.creator.delivery) / 4
       const opponentAi = (aiScores.opponent.logic + aiScores.opponent.persuasiveness + aiScores.opponent.evidence + aiScores.opponent.delivery) / 4
+
+      const aggregateScores = await this.votesService.getAggregateScores(debateId)
 
       let finalCreator: number
       let finalOpponent: number
@@ -59,17 +71,37 @@ export class ScoringProcessor extends WorkerHost {
         finalOpponent = opponentAi
       }
 
-      const winnerId = finalCreator >= finalOpponent ? debate.creator_id! : debate.opponent_id!
-      const loserId = winnerId === debate.creator_id ? debate.opponent_id : debate.creator_id
+      const diff = Math.abs(finalCreator - finalOpponent)
+      let winnerId: string
+      let loserId: string
 
+      if (diff > 2) {
+        winnerId = finalCreator > finalOpponent ? creatorId : opponentId
+        loserId = winnerId === creatorId ? opponentId : creatorId
+      } else {
+        const creatorLogic = aiScores.creator.logic
+        const opponentLogic = aiScores.opponent.logic
+        if (creatorLogic !== opponentLogic) {
+          winnerId = creatorLogic > opponentLogic ? creatorId : opponentId
+          loserId = winnerId === creatorId ? opponentId : creatorId
+        } else {
+          winnerId = aiScores.creator.evidence > aiScores.opponent.evidence ? creatorId : opponentId
+          loserId = winnerId === creatorId ? opponentId : creatorId
+        }
+      }
+
+      await this.debatesService.setAiScores(debateId, aiScores)
       await this.debatesService.setWinner(debateId, winnerId)
       await this.debatesService.complete(debateId)
 
-      if (winnerId && loserId && !winnerId.startsWith('guest_') && !loserId.startsWith('guest_')) {
+      if (!winnerId.startsWith('guest_') && !loserId.startsWith('guest_')) {
         await this.usersService.updateElo(winnerId, loserId)
       }
     } catch {
-      await this.debatesService.setScoringFailed(debateId)
+      const isLastAttempt = job.attemptsMade >= 1
+      if (isLastAttempt) {
+        await this.debatesService.setScoringFailed(debateId)
+      }
       throw job
     }
   }

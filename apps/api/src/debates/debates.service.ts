@@ -193,6 +193,20 @@ export class DebatesService implements OnModuleInit {
     await this.debateRepo.update({ id: debateId }, { winner_id: winnerId })
   }
 
+  async setAiScores(debateId: string, aiScores: {
+    creator: { logic: number; persuasiveness: number; evidence: number; delivery: number }
+    opponent: { logic: number; persuasiveness: number; evidence: number; delivery: number }
+    reasoning: string
+  }) {
+    await this.debateRepo.update({ id: debateId }, { ai_scores: aiScores })
+  }
+
+  async getScores(debateId: string) {
+    const debate = await this.debateRepo.findOneBy({ id: debateId })
+    if (!debate) throw new NotFoundException('Debate not found')
+    return { success: true, data: { ai_scores: debate.ai_scores } }
+  }
+
   private async createGuestSession(debateId: string, role: 'creator' | 'opponent') {
     const session = this.guestSessionRepo.create({
       session_token: uuid(),

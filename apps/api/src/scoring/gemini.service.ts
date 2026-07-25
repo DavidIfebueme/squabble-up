@@ -1,8 +1,8 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, BadRequestException, Logger } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
 import { firstValueFrom } from 'rxjs'
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
 
 const SCORING_PROMPT = `You are a debate judge. Score this debate on a 0-100 scale for each category.
 
@@ -57,17 +57,20 @@ export interface ScoringResult {
 
 @Injectable()
 export class GeminiService {
+  private readonly logger = new Logger(GeminiService.name)
   constructor(private readonly httpService: HttpService) {}
 
   async scoreDebate(
     topic: string,
     transcripts: { round_number: number; speaker_id: string; transcription: string }[],
+    creatorId: string,
+    _opponentId: string,
   ): Promise<ScoringResult> {
     if (!transcripts || transcripts.length < 6) {
       throw new BadRequestException('All 6 round transcripts are required for scoring')
     }
 
-    const prompt = this.buildPrompt(topic, transcripts)
+    const prompt = this.buildPrompt(topic, transcripts, creatorId)
     const response = await this.callGemini(prompt)
     return this.parseResponse(response)
   }
@@ -75,10 +78,11 @@ export class GeminiService {
   private buildPrompt(
     topic: string,
     transcripts: { round_number: number; speaker_id: string; transcription: string }[],
+    creatorId: string,
   ): string {
     const rounds: Record<string, string> = {}
     for (const t of transcripts) {
-      const side = t.speaker_id
+      const side = t.speaker_id === creatorId ? 'creator' : 'opponent'
       const key = `round_${t.round_number}`
       rounds[`${side}_${key}`] = t.transcription || '[No transcription available]'
     }
@@ -144,7 +148,8 @@ export class GeminiService {
         },
         reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : '',
       }
-    } catch {
+    } catch (error) {
+      this.logger.error('Failed to parse Gemini response', error)
       return {
         creator: { logic: 50, persuasiveness: 50, evidence: 50, delivery: 50 },
         opponent: { logic: 50, persuasiveness: 50, evidence: 50, delivery: 50 },

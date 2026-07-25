@@ -17,6 +17,12 @@ export type DebateStatus =
   | 'abandoned'
   | 'scoring_failed'
 
+export interface DebateScores {
+  creator: { logic: number; persuasiveness: number; evidence: number; delivery: number }
+  opponent: { logic: number; persuasiveness: number; evidence: number; delivery: number }
+  reasoning: string
+}
+
 export interface Debate {
   id: string
   topic_id: string
@@ -24,6 +30,7 @@ export interface Debate {
   opponent_id: string | null
   status: DebateStatus
   winner_id: string | null
+  ai_scores: DebateScores | null
   created_at: string
   completed_at: string | null
 }

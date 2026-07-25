@@ -21,6 +21,7 @@ describe('DebatesService', () => {
     opponent_id: null,
     status: 'pending',
     winner_id: null,
+    ai_scores: null,
     created_at: new Date(),
     completed_at: null,
     ...overrides,
