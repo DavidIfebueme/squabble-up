@@ -10,6 +10,7 @@ export type RootStackParamList = {
   DebateRound: { debateId: string; roundNumber: number; side: 'creator' | 'opponent' }
   GuestDebate: undefined
   Scoring: { debateId: string }
+  Voting: { debateId: string }
   TopicDetail: { slug: string }
   Auth: undefined
 }

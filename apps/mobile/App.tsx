@@ -12,6 +12,7 @@ import CreateDebateScreen from './src/screens/CreateDebateScreen'
 import ProfileScreen from './src/screens/ProfileScreen'
 import GuestDebateScreen from './src/screens/GuestDebateScreen'
 import ScoringScreen from './src/screens/ScoringScreen'
+import VotingScreen from './src/screens/VotingScreen'
 import AuthScreen from './src/screens/AuthScreen'
 import type { RootStackParamList } from './src/lib/types'
 
@@ -52,6 +53,7 @@ export default function App() {
         <Stack.Screen name="DebateRound" component={DebateRoundScreen} />
         <Stack.Screen name="GuestDebate" component={GuestDebateScreen} />
         <Stack.Screen name="Scoring" component={ScoringScreen} />
+        <Stack.Screen name="Voting" component={VotingScreen} />
         <Stack.Screen name="Auth" component={AuthScreen} />
       </Stack.Navigator>
     </NavigationContainer>
