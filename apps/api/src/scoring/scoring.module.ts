@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { BullModule } from '@nestjs/bullmq'
 import { HttpModule } from '@nestjs/axios'
 import { ScoringService } from './scoring.service'
@@ -17,7 +17,7 @@ export const SCORING_QUEUE = 'scoring'
     BullModule.registerQueue({ name: SCORING_QUEUE }),
     HttpModule,
     VotesModule,
-    DebatesModule,
+    forwardRef(() => DebatesModule),
     UsersModule,
     RoundsModule,
     TopicsModule,
