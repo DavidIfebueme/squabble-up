@@ -99,14 +99,23 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
       setOpponentDisconnected(true)
       setReconnectRemaining(120)
     })
-    const cleanup4 = onDebateEvent('reconnect-window', (data: any) => {
+    const cleanup4 = onDebateEvent('opponent-reconnected', () => {
+      setOpponentDisconnected(false)
+      setReconnectRemaining(null)
+      setOpponentStatus('waiting')
+    })
+    const cleanup5 = onDebateEvent('reconnect-window', (data: any) => {
       const remaining = data.remaining_ms ?? 0
       setReconnectRemaining(Math.ceil(remaining / 1000))
     })
-    const cleanup5 = onDebateEvent('debate-completed', () => {
+    const cleanup5 = onDebateEvent('reconnect-window', (data: any) => {
+      const remaining = data.remaining_ms ?? 0
+      setReconnectRemaining(Math.ceil(remaining / 1000))
+    })
+    const cleanup6 = onDebateEvent('debate-completed', () => {
       navigation.replace('Scoring', { debateId })
     })
-    const cleanup6 = onDebateEvent('debate-abandoned', () => {
+    const cleanup7 = onDebateEvent('debate-abandoned', () => {
       Alert.alert('Debate Abandoned', 'Your opponent did not reconnect in time. You win by default.', [
         { text: 'OK', onPress: () => navigation.replace('Scoring', { debateId }) },
       ])
@@ -119,6 +128,7 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
       cleanup4()
       cleanup5()
       cleanup6()
+      cleanup7()
     }
   }, [debateId, roundNumber, navigation])
 

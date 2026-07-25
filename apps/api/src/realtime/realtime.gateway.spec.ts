@@ -33,9 +33,8 @@ describe('RealtimeGateway', () => {
   describe('handleJoinDebate', () => {
     it('should join room and emit user-joined', () => {
       const mockClient = { join: jest.fn(), id: 'client-1' } as unknown as Socket
-      const data = { debate_id: 'debate-1' }
 
-      const result = gateway.handleJoinDebate(mockClient, data)
+      const result = gateway.handleJoinDebate(mockClient, { debate_id: 'debate-1' })
 
       expect(mockClient.join).toHaveBeenCalledWith('debate:debate-1')
       expect(mockServer.to).toHaveBeenCalledWith('debate:debate-1')
@@ -46,23 +45,35 @@ describe('RealtimeGateway', () => {
       expect(result).toEqual({ success: true, room: 'debate:debate-1' })
     })
 
-    it('should clear reconnect timer when client reconnects', () => {
-      const mockClient = { join: jest.fn(), id: 'client-1' } as unknown as Socket
+    it('should emit opponent-reconnected when reconnect timer exists', () => {
+      const mockClient = { join: jest.fn(), id: 'client-2' } as unknown as Socket
       const timer = jest.fn()
-      gateway['reconnectTimers'] = new Map([['client-1', timer as any]])
+      gateway['reconnectTimers'] = new Map([['debate-1', timer as any]])
 
       gateway.handleJoinDebate(mockClient, { debate_id: 'debate-1' })
 
-      expect(gateway['reconnectTimers'].has('client-1')).toBe(false)
+      expect(mockServer.emit).toHaveBeenCalledWith('opponent-reconnected', expect.objectContaining({
+        debate_id: 'debate-1',
+        user_id: 'client-2',
+      }))
+      expect(gateway['reconnectTimers'].has('debate-1')).toBe(false)
+    })
+
+    it('should not emit user-joined when opponent is reconnecting', () => {
+      const mockClient = { join: jest.fn(), id: 'client-2' } as unknown as Socket
+      gateway['reconnectTimers'] = new Map([['debate-1', jest.fn() as any]])
+
+      gateway.handleJoinDebate(mockClient, { debate_id: 'debate-1' })
+
+      expect(mockServer.emit).not.toHaveBeenCalledWith('user-joined', expect.anything())
     })
   })
 
   describe('handleLeaveDebate', () => {
     it('should leave room and emit user-left', () => {
       const mockClient = { leave: jest.fn(), id: 'client-1' } as unknown as Socket
-      const data = { debate_id: 'debate-1' }
 
-      const result = gateway.handleLeaveDebate(mockClient, data)
+      const result = gateway.handleLeaveDebate(mockClient, { debate_id: 'debate-1' })
 
       expect(mockClient.leave).toHaveBeenCalledWith('debate:debate-1')
       expect(mockServer.to).toHaveBeenCalledWith('debate:debate-1')
@@ -97,14 +108,26 @@ describe('RealtimeGateway', () => {
       }))
     })
 
-    it('should clear reconnect timer if client was disconnecting', () => {
+    it('should clear reconnect timer and emit opponent-reconnected', () => {
       const mockClient = { id: 'client-1' } as unknown as Socket
       const timer = jest.fn()
-      gateway['reconnectTimers'] = new Map([['client-1', timer as any]])
+      gateway['reconnectTimers'] = new Map([['debate-1', timer as any]])
 
       gateway.handleHeartbeat(mockClient, { debate_id: 'debate-1' })
 
-      expect(gateway['reconnectTimers'].has('client-1')).toBe(false)
+      expect(gateway['reconnectTimers'].has('debate-1')).toBe(false)
+      expect(mockServer.emit).toHaveBeenCalledWith('opponent-reconnected', expect.objectContaining({
+        debate_id: 'debate-1',
+        user_id: 'client-1',
+      }))
+    })
+
+    it('should not emit opponent-reconnected if no reconnect timer', () => {
+      const mockClient = { id: 'client-1' } as unknown as Socket
+
+      gateway.handleHeartbeat(mockClient, { debate_id: 'debate-1' })
+
+      expect(mockServer.emit).not.toHaveBeenCalledWith('opponent-reconnected', expect.anything())
     })
   })
 
@@ -140,7 +163,6 @@ describe('RealtimeGateway', () => {
   describe('handleDisconnect', () => {
     it('should emit opponent-disconnected when a participant disconnects', () => {
       const mockClient = { id: 'client-1' } as unknown as Socket
-
       gateway['clientDebates'] = new Map([['client-1', 'debate-1']])
 
       gateway.handleDisconnect(mockClient)
@@ -163,6 +185,15 @@ describe('RealtimeGateway', () => {
       }))
     })
 
+    it('should store reconnect timer by debate ID', () => {
+      const mockClient = { id: 'client-1' } as unknown as Socket
+      gateway['clientDebates'] = new Map([['client-1', 'debate-1']])
+
+      gateway.handleDisconnect(mockClient)
+
+      expect(gateway['reconnectTimers'].has('debate-1')).toBe(true)
+    })
+
     it('should emit debate-abandoned after reconnect timeout', () => {
       const mockClient = { id: 'client-1' } as unknown as Socket
       gateway['clientDebates'] = new Map([['client-1', 'debate-1']])
@@ -175,6 +206,7 @@ describe('RealtimeGateway', () => {
         debate_id: 'debate-1',
         reason: 'reconnect_timeout',
       }))
+      expect(gateway['reconnectTimers'].has('debate-1')).toBe(false)
     })
 
     it('should clean up client tracking after disconnect', () => {
@@ -194,6 +226,15 @@ describe('RealtimeGateway', () => {
       gateway.handleDisconnect(mockClient)
 
       expect(mockServer.emit).not.toHaveBeenCalled()
+    })
+
+    it('should clear reconnect timer when client reconnects with new socket ID', () => {
+      const mockClient = { join: jest.fn(), id: 'client-2' } as unknown as Socket
+      gateway['reconnectTimers'] = new Map([['debate-1', jest.fn() as any]])
+
+      gateway.handleJoinDebate(mockClient, { debate_id: 'debate-1' })
+
+      expect(gateway['reconnectTimers'].has('debate-1')).toBe(false)
     })
   })
 })

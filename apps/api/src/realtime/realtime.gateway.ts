@@ -27,12 +27,22 @@ export class RealtimeGateway implements OnGatewayDisconnect {
     client.join(room)
     this.clientDebates.set(client.id, data.debate_id)
     this.clientHeartbeats.set(client.id, Date.now())
-    this.clearReconnectTimer(client.id)
-    this.server.to(room).emit('user-joined', {
-      debate_id: data.debate_id,
-      user_id: client.id,
-      timestamp: new Date().toISOString(),
-    })
+
+    if (this.reconnectTimers.has(data.debate_id)) {
+      this.clearReconnectTimer(data.debate_id)
+      this.server.to(room).emit('opponent-reconnected', {
+        debate_id: data.debate_id,
+        user_id: client.id,
+        timestamp: new Date().toISOString(),
+      })
+    } else {
+      this.server.to(room).emit('user-joined', {
+        debate_id: data.debate_id,
+        user_id: client.id,
+        timestamp: new Date().toISOString(),
+      })
+    }
+
     return { success: true, room }
   }
 
@@ -42,7 +52,6 @@ export class RealtimeGateway implements OnGatewayDisconnect {
     client.leave(room)
     this.clientDebates.delete(client.id)
     this.clientHeartbeats.delete(client.id)
-    this.clearReconnectTimer(client.id)
     this.server.to(room).emit('user-left', {
       debate_id: data.debate_id,
       user_id: client.id,
@@ -54,7 +63,16 @@ export class RealtimeGateway implements OnGatewayDisconnect {
   @SubscribeMessage('heartbeat')
   handleHeartbeat(@ConnectedSocket() client: Socket, @MessageBody() data: { debate_id: string }) {
     this.clientHeartbeats.set(client.id, Date.now())
-    this.clearReconnectTimer(client.id)
+
+    if (this.reconnectTimers.has(data.debate_id)) {
+      this.clearReconnectTimer(data.debate_id)
+      this.server.to(`debate:${data.debate_id}`).emit('opponent-reconnected', {
+        debate_id: data.debate_id,
+        user_id: client.id,
+        timestamp: new Date().toISOString(),
+      })
+    }
+
     this.server.to(`debate:${data.debate_id}`).emit('heartbeat-ack', {
       debate_id: data.debate_id,
       user_id: client.id,
@@ -88,7 +106,7 @@ export class RealtimeGateway implements OnGatewayDisconnect {
       remaining -= COUNTDOWN_TICK_MS
 
       if (remaining <= 0) {
-        this.clearReconnectTimer(client.id)
+        this.reconnectTimers.delete(debateId)
         this.server.to(`debate:${debateId}`).emit('debate-abandoned', {
           debate_id: debateId,
           reason: 'reconnect_timeout',
@@ -104,7 +122,7 @@ export class RealtimeGateway implements OnGatewayDisconnect {
       })
     }, COUNTDOWN_TICK_MS)
 
-    this.reconnectTimers.set(client.id, timer)
+    this.reconnectTimers.set(debateId, timer)
   }
 
   emitDebateEvent(debateId: string, event: string, payload: Record<string, unknown>) {
@@ -116,11 +134,11 @@ export class RealtimeGateway implements OnGatewayDisconnect {
     })
   }
 
-  private clearReconnectTimer(clientId: string) {
-    const timer = this.reconnectTimers.get(clientId)
+  private clearReconnectTimer(debateId: string) {
+    const timer = this.reconnectTimers.get(debateId)
     if (timer) {
       clearInterval(timer)
-      this.reconnectTimers.delete(clientId)
+      this.reconnectTimers.delete(debateId)
     }
   }
 }
