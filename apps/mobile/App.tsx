@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar'
-import { ActivityIndicator, View, Linking } from 'react-native'
+import { ActivityIndicator, View } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
