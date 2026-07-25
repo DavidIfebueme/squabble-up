@@ -66,30 +66,18 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 Ask yourself: "What breaks first, and does the caller know why?" If no, handle it.
 
-## 5. Git Workflow — Branch from dev, PR to dev, merge to main
+## 5. Git Workflow — No Direct Pushes to Main
 
-**Branch off `dev`, PR targets `dev`, squash-merge `dev` to `main` for releases.**
+**Always work on feature branches. Always open PRs.**
 
-- All feature/fix branches branch off `dev` (not `main`).
-- Branch naming: `feat/slice-name` or `fix/slice-name`.
-- Commit messages: conventional commits — `feat:`, `fix:`, `chore:`, `test:`, `refactor:`.
+- Never push directly to `main` or `dev`.
+- Always create a feature branch from `main` (or `dev` if specified).
+- Branch naming: `feat/slice-name` or `fix/slice-name` (e.g., `feat/slice-1-auth`, `fix/scoring-tiebreaker`).
+- Commit messages: conventional commits format — `feat:`, `fix:`, `chore:`, `test:`, `refactor:` (e.g., `feat: implement auth service with jwt + bcrypt`).
 - PR title: match the commit message scope, concise and descriptive.
-- PR description: explain what changed, why, and what to test.
-- PRs target `dev`. After testing on `dev`, merge `dev` into `main`.
+- PR description: explain what changed, why, and what to test. reference any related issues.
 - Never merge your own PR — wait for review or explicit approval.
 - CI must pass before merge.
-- Android APK builds are triggered automatically on push to `main` only.
-
-## 8. CI/CD — Android Build & Release
-
-**Push to `main` triggers an automated Android APK build via EAS Build.**
-
-- Workflow: `.github/workflows/android-build.yml`
-- Builds the APK via `eas build --platform android --profile production`
-- Publishes the APK as a GitHub Release on the repo
-- Requires the `EXPO_TOKEN` secret to be set in GitHub repo settings
-  - Generate at https://expo.dev/accounts/{username}/settings/access-tokens
-  - Add as a repository secret named `EXPO_TOKEN`
 
 ## 7. Code Quality Rules
 
