@@ -27,7 +27,7 @@ const ROUND_LABELS: Record<number, { name: string; prompt: string }> = {
 }
 
 export default function DebateRoundScreen({ route, navigation }: Props) {
-  const { debateId, roundNumber } = route.params
+  const { debateId, roundNumber, side } = route.params
   const label = ROUND_LABELS[roundNumber as keyof typeof ROUND_LABELS] ?? { name: 'Round', prompt: '' }
   const roundType = ROUND_NUMBER_TO_TYPE[roundNumber as keyof typeof ROUND_NUMBER_TO_TYPE]
   const duration = roundType ? ROUND_DURATIONS[roundType] : 90
@@ -36,6 +36,7 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
   const [creating, setCreating] = useState(true)
   const [opponentDisconnected, setOpponentDisconnected] = useState(false)
   const [reconnectRemaining, setReconnectRemaining] = useState<number | null>(null)
+  const [opponentId, setOpponentId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -46,6 +47,11 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
           Alert.alert('Error', 'Could not load debate.')
           navigation.goBack()
           return
+        }
+
+        if (!cancelled) {
+          const d = result.data
+          setOpponentId(side === 'creator' ? d.opponent_id : d.creator_id)
         }
 
         try {
@@ -81,11 +87,13 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
   useEffect(() => {
     const cleanup1 = onDebateEvent('round-started', (data) => {
       if (data.payload?.round_number === roundNumber && data.payload?.speaker_id !== undefined) {
+        if (data.payload.speaker_id !== opponentId) return
         setOpponentStatus('recording')
       }
     })
     const cleanup2 = onDebateEvent('round-submitted', (data) => {
       if (data.payload?.round_number === roundNumber) {
+        if (data.payload?.speaker_id !== undefined && data.payload.speaker_id !== opponentId) return
         setOpponentStatus('done')
       }
     })
@@ -110,6 +118,10 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
         { text: 'OK', onPress: () => navigation.replace('Scoring', { debateId }) },
       ])
     })
+    const cleanup8 = onDebateEvent('user-left', () => {
+      setOpponentDisconnected(true)
+      setReconnectRemaining(120)
+    })
 
     return () => {
       cleanup1()
@@ -119,8 +131,9 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
       cleanup5()
       cleanup6()
       cleanup7()
+      cleanup8()
     }
-  }, [debateId, roundNumber, navigation])
+  }, [debateId, roundNumber, navigation, opponentId])
 
   const handleRecordComplete = useCallback(async ({ transcription, duration: recordedDuration }: { transcription: string; duration: number }) => {
     if (!roundId) {
@@ -140,7 +153,7 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
 
   const opponentStatusText = opponentDisconnected
     ? reconnectRemaining !== null
-      ? `Opponent disconnected. Reconnecting... ${Math.floor(reconnectRemaining / 60)}:${String(reconnectRemaining % 60).padStart(2, '0')}`
+      ? `Opponent disconnected. Waiting for them to return... ${Math.floor(reconnectRemaining / 60)}:${String(reconnectRemaining % 60).padStart(2, '0')}`
       : 'Opponent disconnected. Waiting...'
     : opponentStatus === 'recording' ? 'Opponent: Recording...'
     : opponentStatus === 'done' ? 'Opponent: Done'

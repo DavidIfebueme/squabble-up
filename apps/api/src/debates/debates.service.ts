@@ -168,8 +168,12 @@ export class DebatesService implements OnModuleInit {
       throw new ForbiddenException('Only participants can abandon a debate')
     }
     this.clearAbandonTimer(debateId)
+    const wasActive = debate.status === 'active'
     debate.status = 'abandoned'
     await this.debateRepo.save(debate)
+    if (wasActive) {
+      this.realtimeGateway.emitDebateEvent(debateId, 'debate-abandoned', { reason: 'manual_abandon' })
+    }
     return { success: true, data: debate }
   }
 

@@ -12,6 +12,7 @@ describe('DebatesService', () => {
   let service: DebatesService
   let debateRepo: jest.Mocked<Repository<Debate>>
   let topicsService: jest.Mocked<TopicsService>
+  let realtimeGateway: jest.Mocked<RealtimeGateway>
 
   const createMockDebate = (overrides?: Partial<Debate>): Debate => ({
     id: 'debate-uuid-1',
@@ -66,6 +67,7 @@ describe('DebatesService', () => {
     service = module.get(DebatesService)
     debateRepo = module.get(getRepositoryToken(Debate))
     topicsService = module.get(TopicsService)
+    realtimeGateway = module.get(RealtimeGateway)
   })
 
   afterEach(() => {
@@ -245,6 +247,26 @@ describe('DebatesService', () => {
 
       expect(result.success).toBe(true)
       expect(result.data.status).toBe('abandoned')
+    })
+
+    it('emits debate-abandoned for active debates', async () => {
+      const debate = createMockDebate({ status: 'active', opponent_id: 'user-2' })
+      debateRepo.findOneBy.mockResolvedValue(debate)
+      debateRepo.save.mockResolvedValue({ ...debate, status: 'abandoned' })
+
+      await service.abandon('debate-uuid-1', 'user-1')
+
+      expect(realtimeGateway.emitDebateEvent).toHaveBeenCalledWith('debate-uuid-1', 'debate-abandoned', { reason: 'manual_abandon' })
+    })
+
+    it('does not emit debate-abandoned for pending debates', async () => {
+      const debate = createMockDebate()
+      debateRepo.findOneBy.mockResolvedValue(debate)
+      debateRepo.save.mockResolvedValue({ ...debate, status: 'abandoned' })
+
+      await service.abandon('debate-uuid-1', 'user-1')
+
+      expect(realtimeGateway.emitDebateEvent).not.toHaveBeenCalled()
     })
 
     it('throws ForbiddenException by non-participant', async () => {

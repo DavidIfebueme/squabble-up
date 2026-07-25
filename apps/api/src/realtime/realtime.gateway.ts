@@ -94,6 +94,7 @@ export class RealtimeGateway implements OnGatewayDisconnect {
     })
 
     let remaining = RECONNECT_WINDOW_MS
+    const startTime = Date.now()
 
     this.server.to(`debate:${debateId}`).emit('reconnect-window', {
       debate_id: debateId,
@@ -102,7 +103,7 @@ export class RealtimeGateway implements OnGatewayDisconnect {
     })
 
     const timer = setInterval(() => {
-      remaining -= COUNTDOWN_TICK_MS
+      remaining = RECONNECT_WINDOW_MS - (Date.now() - startTime)
 
       if (remaining <= 0) {
         this.reconnectTimers.delete(debateId)
