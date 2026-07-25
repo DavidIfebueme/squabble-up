@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Share, ActivityIndicator, Platform } from 'react-native'
-import ViewShot, { ViewShotRef } from 'react-native-view-shot'
+import ViewShot from 'react-native-view-shot'
 import { getScorecard, ScorecardData } from '../lib/debates'
 import { getVotes } from '../lib/votes'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
@@ -30,7 +30,7 @@ export default function ScoringScreen({ route, navigation }: Props) {
   const [voteFor, setVoteFor] = useState(0)
   const [voteAgainst, setVoteAgainst] = useState(0)
   const [totalVotes, setTotalVotes] = useState(0)
-  const cardRef = useRef<ViewShotRef>(null)
+  const cardRef = useRef<InstanceType<typeof ViewShot>>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -64,7 +64,7 @@ export default function ScoringScreen({ route, navigation }: Props) {
 
   const handleShare = async () => {
     try {
-      const uri = await cardRef.current?.capture()
+      const uri = await cardRef.current?.capture?.()
       if (uri) {
         await Share.share({
           message: shareMessage,
