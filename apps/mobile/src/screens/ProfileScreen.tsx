@@ -1,9 +1,38 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { getMyProfile, getUserStats, getUserHistory } from '../lib/users'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { useNavigation } from '@react-navigation/native'
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack'
+import type { RootStackParamList } from '../lib/types'
 
-type Props = NativeStackScreenProps<any, 'Profile'>
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Profile'>
+
+interface Profile {
+  id: string
+  display_name: string | null
+  avatar_url: string | null
+  elo_score: number | null
+}
+
+interface Stats {
+  display_name: string | null
+  avatar_url: string | null
+  elo_score: number
+  total_debates: number
+  wins: number
+  losses: number
+  win_rate: number
+}
+
+interface HistoryItem {
+  id: string
+  topic_id: string
+  status: string
+  winner_id: string | null
+  result: 'won' | 'lost' | 'tied'
+  completed_at: string | null
+  is_creator: boolean
+}
 
 const COLORS = {
   bgPrimary: '#1E1E1E',
@@ -18,25 +47,28 @@ const COLORS = {
   recordRed: '#E53935',
 }
 
-export default function ProfileScreen({ navigation }: Props) {
-  const [profile, setProfile] = useState<any>(null)
-  const [stats, setStats] = useState<any>(null)
-  const [history, setHistory] = useState<any[]>([])
+export default function ProfileScreen() {
+  const navigation = useNavigation<NavigationProp>()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [history, setHistory] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     const load = async () => {
       try {
-        const [profileRes, statsRes, historyRes] = await Promise.all([
-          getMyProfile(),
-          getUserStats((await getMyProfile()).id),
-          getUserHistory((await getMyProfile()).id),
-        ])
+        const profileRes = await getMyProfile()
         if (!cancelled) {
           setProfile(profileRes)
-          setStats(statsRes.data)
-          setHistory(historyRes.data || [])
+          const [statsRes, historyRes] = await Promise.all([
+            getUserStats(profileRes.id),
+            getUserHistory(profileRes.id),
+          ])
+          if (!cancelled) {
+            setStats(statsRes.data)
+            setHistory(historyRes.data || [])
+          }
         }
       } catch {
         // Not authenticated or error
@@ -136,11 +168,11 @@ const styles = StyleSheet.create({
   card: { backgroundColor: COLORS.bgSurface, padding: 24, borderRadius: 16, alignItems: 'center', marginBottom: 24 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.accentAmber, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   avatarText: { fontSize: 32, fontWeight: '700', color: COLORS.bgPrimary },
-  name: { fontFamily: 'serif', fontSize: 22, fontWeight: '700', color: COLORS.textPrimary },
+  name: { fontFamily: 'DM Serif Display', fontSize: 22, fontWeight: '700', color: COLORS.textPrimary },
   elo: { fontSize: 14, color: COLORS.textSecondary, marginTop: 4 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
   statCard: { flex: 1, backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginHorizontal: 4, alignItems: 'center' },
-  statNumber: { fontFamily: 'serif', fontSize: 22, fontWeight: '800', color: COLORS.accentAmber },
+  statNumber: { fontFamily: 'DM Serif Display', fontSize: 22, fontWeight: '800', color: COLORS.accentAmber },
   statLabel: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: COLORS.textPrimary, marginBottom: 12 },
   historyCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.bgSurface, padding: 16, borderRadius: 12, marginBottom: 8 },

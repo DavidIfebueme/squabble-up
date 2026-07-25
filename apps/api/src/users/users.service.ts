@@ -63,7 +63,6 @@ export class UsersService {
 
   async getHistory(id: string, page = 1, limit = 20) {
     const qb = this.debateRepo.createQueryBuilder('debate')
-      .leftJoinAndSelect('debate.topic_id', 'topicId')
       .where('(debate.creator_id = :id OR debate.opponent_id = :id) AND debate.status = :status', {
         id,
         status: 'completed',
