@@ -1,4 +1,5 @@
 import api from './api'
+import type { Vote } from './types'
 
 export async function submitVote(data: {
   debate_id: string
@@ -12,6 +13,6 @@ export async function submitVote(data: {
 }
 
 export async function getVotes(debateId: string) {
-  const { data } = await api.get(`/votes/debate/${debateId}`)
+  const { data } = await api.get<{ data: Vote[] }>(`/votes/debate/${debateId}`)
   return data
 }

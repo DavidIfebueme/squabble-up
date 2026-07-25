@@ -11,6 +11,14 @@ import { Repository, UpdateResult } from 'typeorm'
 
 jest.mock('bcrypt')
 
+const mockVerifyIdToken = jest.fn()
+
+jest.mock('google-auth-library', () => ({
+  OAuth2Client: jest.fn().mockImplementation(() => ({
+    verifyIdToken: mockVerifyIdToken,
+  })),
+}))
+
 describe('AuthService', () => {
   let service: AuthService
   let userRepo: jest.Mocked<Repository<User>>
@@ -227,14 +235,13 @@ describe('AuthService', () => {
     }
 
     beforeEach(() => {
-      global.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockTokenResponse),
+      mockVerifyIdToken.mockResolvedValue({
+        getPayload: () => mockTokenResponse,
       })
     })
 
     afterEach(() => {
-      jest.restoreAllMocks()
+      mockVerifyIdToken.mockReset()
     })
 
     it('creates new user with auth_provider=google and verified=true', async () => {
@@ -291,10 +298,11 @@ describe('AuthService', () => {
       expect(emailService.sendVerificationEmail).not.toHaveBeenCalled()
     })
 
-    it('throws UnauthorizedException when token info endpoint returns error', async () => {
-      global.fetch = jest.fn().mockResolvedValue({ ok: false })
+    it('throws UnauthorizedException when verifyIdToken rejects', async () => {
+      mockVerifyIdToken.mockRejectedValue(new Error('Invalid token'))
+      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'))
 
-      await expect(service.googleAuth('invalid-token')).rejects.toThrow(UnauthorizedException)
+      await expect(service.googleAuth('bad-token')).rejects.toThrow(UnauthorizedException)
     })
   })
 

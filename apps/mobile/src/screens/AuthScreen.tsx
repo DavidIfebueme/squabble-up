@@ -39,7 +39,7 @@ export default function AuthScreen({ navigation }: ScreenProps<'Auth'>) {
       if (mode === 'login') {
         const result = await loginWithEmail(email, password)
         if (result.access_token) {
-          setAccessToken(result.access_token)
+          await setAccessToken(result.access_token)
         }
         navigation.goBack()
       } else {

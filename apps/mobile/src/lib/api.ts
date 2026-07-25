@@ -9,8 +9,8 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-api.interceptors.request.use((config) => {
-  const token = getAccessToken()
+api.interceptors.request.use(async (config) => {
+  const token = await getAccessToken()
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }

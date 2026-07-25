@@ -44,7 +44,7 @@ export default function ScoringScreen({ route, navigation }: Props) {
           setScorecard(scorecardResult.data)
         }
         if (!cancelled && votesResult?.data) {
-          const forCount = votesResult.data.filter((v: { vote_type: string }) => v.vote_type === 'creator').length
+          const forCount = votesResult.data.filter(v => v.vote_type === 'creator').length
           const againstCount = votesResult.data.length - forCount
           setVoteFor(forCount)
           setVoteAgainst(againstCount)

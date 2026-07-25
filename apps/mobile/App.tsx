@@ -16,18 +16,8 @@ import GuestDebateScreen from './src/screens/GuestDebateScreen'
 import ScoringScreen from './src/screens/ScoringScreen'
 import VotingScreen from './src/screens/VotingScreen'
 import AuthScreen from './src/screens/AuthScreen'
+import { COLORS } from './src/lib/design'
 import type { RootStackParamList } from './src/lib/types'
-
-const COLORS = {
-  bgPrimary: '#1E1E1E',
-  bgSurface: '#2A2A2A',
-  bgElevated: '#333333',
-  accentAmber: '#D4953A',
-  textPrimary: '#F5F0E8',
-  textSecondary: '#A0998F',
-  textMuted: '#6B6560',
-  borderSubtle: '#3A3A3A',
-}
 
 const Tab = createBottomTabNavigator()
 
@@ -92,8 +82,8 @@ export default function App() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1E1E1E' }}>
-        <ActivityIndicator size="large" color="#D4953A" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.bgPrimary }}>
+        <ActivityIndicator size="large" color={COLORS.accentAmber} />
       </View>
     )
   }

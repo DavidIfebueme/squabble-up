@@ -26,6 +26,7 @@
     "expo-font": "~13.0.4",
     "expo-linear-gradient": "^57.0.1",
     "expo-linking": "~7.0.0",
+    "expo-secure-store": "^57.0.1",
     "expo-speech-recognition": "0.3.2",
     "expo-status-bar": "~2.0.0",
     "phosphor-react-native": "^3.0.6",
