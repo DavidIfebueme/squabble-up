@@ -35,10 +35,29 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build Android APK
-        run: eas build --platform android --profile production --non-interactive
+        id: eas-build
+        run: |
+          eas build --platform android --profile production --non-interactive --wait --json > eas-build.json
+          node -e "
+            const fs = require('fs');
+            const raw = fs.readFileSync('eas-build.json', 'utf8').trim();
+            const parsed = JSON.parse(raw);
+            const builds = Array.isArray(parsed) ? parsed : [parsed];
+            const build = builds.find(b => String(b.platform).toUpperCase() === 'ANDROID') || builds[0];
+            if (!build?.id) throw new Error('No EAS build id found in output');
+            const url = build.artifacts?.applicationArchiveUrl || build.artifacts?.buildUrl || build.artifactUrl;
+            fs.appendFileSync(process.env.GITHUB_OUTPUT, 'build_id=' + build.id + '\n');
+            if (url) fs.appendFileSync(process.env.GITHUB_OUTPUT, 'artifact_url=' + url + '\n');
+          "
 
       - name: Download APK
-        run: eas build:download --output app-release.apk
+        run: |
+          if [ -n "${{ steps.eas-build.outputs.artifact_url }}" ]; then
+            curl --fail --location "${{ steps.eas-build.outputs.artifact_url }}" --output app-release.apk
+          else
+            eas build:download --build-id "${{ steps.eas-build.outputs.build_id }}" --non-interactive
+            mv *.apk app-release.apk
+          fi
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
