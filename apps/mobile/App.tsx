@@ -1,7 +1,9 @@
 import { StatusBar } from 'expo-status-bar'
+import { ActivityIndicator, View } from 'react-native'
 import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import { useFonts, DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif-display'
 import HomeScreen from './src/screens/HomeScreen'
 import DebateScreen from './src/screens/DebateScreen'
 import DebateLobbyScreen from './src/screens/DebateLobbyScreen'
@@ -30,6 +32,16 @@ function HomeTabs() {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({ DMSerifDisplay_400Regular })
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1E1E1E' }}>
+        <ActivityIndicator size="large" color="#D4953A" />
+      </View>
+    )
+  }
+
   return (
     <NavigationContainer>
       <StatusBar style="auto" />

@@ -10,7 +10,9 @@
     "splash": {
       "backgroundColor": "#0F172A"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.squabbleup.mobile"
@@ -24,16 +26,27 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "squabbleup" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "squabbleup"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
     "plugins": [
-      ["expo-speech-recognition", {
-        "microphonePermission": "Allow Squabble Up to access your microphone for recording",
-        "speechRecognitionPermission": "Allow Squabble Up to recognize your speech for transcription"
-      }]
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Squabble Up to access your microphone for recording",
+          "speechRecognitionPermission": "Allow Squabble Up to recognize your speech for transcription"
+        }
+      ],
+      "expo-font"
     ]
   }
 }
