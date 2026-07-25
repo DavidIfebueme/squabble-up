@@ -9,7 +9,6 @@ import {
 import { Server, Socket } from 'socket.io'
 
 const RECONNECT_WINDOW_MS = 2 * 60 * 1000
-const HEARTBEAT_INTERVAL_MS = 30_000
 const COUNTDOWN_TICK_MS = 1000
 
 @WebSocketGateway({ cors: { origin: '*' } })
