@@ -17,7 +17,6 @@ describe('ScoringProcessor', () => {
   let roundsService: jest.Mocked<RoundsService>
   let topicsService: jest.Mocked<TopicsService>
   let geminiService: jest.Mocked<GeminiService>
-  let contentFilter: jest.Mocked<ContentFilterService>
 
   const debateId = 'debate-uuid-1'
   const creatorId = 'creator-uuid-1'
@@ -103,7 +102,6 @@ describe('ScoringProcessor', () => {
     roundsService = module.get(RoundsService)
     topicsService = module.get(TopicsService)
     geminiService = module.get(GeminiService)
-    contentFilter = module.get(ContentFilterService)
 
     debatesService.findById.mockResolvedValue({ success: true, data: mockDebate })
     topicsService.findById.mockResolvedValue({ success: true, data: mockTopic })
