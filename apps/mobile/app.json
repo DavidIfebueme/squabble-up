@@ -15,7 +15,11 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "app.squabbleup.mobile"
+      "bundleIdentifier": "app.squabbleup.mobile",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow Squabble Up to recognize your speech for transcription",
+        "NSMicrophoneUsageDescription": "Allow Squabble Up to access your microphone for recording"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -36,6 +40,9 @@
             "DEFAULT"
           ]
         }
+      ],
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -47,6 +54,12 @@
         }
       ],
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e86527ad-cfb6-4ea8-b04c-428581e26260"
+      }
+    },
+    "owner": "david0x01"
   }
 }
