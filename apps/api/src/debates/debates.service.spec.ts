@@ -432,6 +432,61 @@ describe('DebatesService', () => {
     })
   })
 
+  describe('getScorecard', () => {
+    const mockTopic = { id: 'topic-uuid-1', title: 'Test Topic', category: 'general' }
+
+    beforeEach(() => {
+      topicsService.findById = jest.fn().mockResolvedValue({ success: true, data: mockTopic })
+    })
+
+    it('returns scorecard with topic and ai_scores', async () => {
+      const aiScores = {
+        creator: { logic: 80, persuasiveness: 70, evidence: 60, delivery: 90 },
+        opponent: { logic: 60, persuasiveness: 80, evidence: 70, delivery: 50 },
+        reasoning: 'Strong arguments on both sides.',
+      }
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate({
+        status: 'completed',
+        opponent_id: 'user-2',
+        winner_id: 'user-1',
+        ai_scores: aiScores,
+        completed_at: new Date(),
+      }))
+
+      const result = await service.getScorecard('debate-uuid-1')
+
+      expect(result.success).toBe(true)
+      expect(result.data.topic).toEqual(mockTopic)
+      expect(result.data.winner_id).toBe('user-1')
+      expect(result.data.ai_scores).toEqual(aiScores)
+    })
+
+    it('returns null ai_scores when not yet scored', async () => {
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate({
+        status: 'completed',
+        opponent_id: 'user-2',
+        ai_scores: null,
+      }))
+
+      const result = await service.getScorecard('debate-uuid-1')
+
+      expect(result.success).toBe(true)
+      expect(result.data.ai_scores).toBeNull()
+    })
+
+    it('throws NotFoundException for non-existent debate', async () => {
+      debateRepo.findOneBy.mockResolvedValue(null)
+
+      await expect(service.getScorecard('nonexistent')).rejects.toThrow(NotFoundException)
+    })
+
+    it('throws BadRequestException for non-completed debate', async () => {
+      debateRepo.findOneBy.mockResolvedValue(createMockDebate({ status: 'active', opponent_id: 'user-2' }))
+
+      await expect(service.getScorecard('debate-uuid-1')).rejects.toThrow(BadRequestException)
+    })
+  })
+
   describe('onModuleInit', () => {
     beforeEach(() => jest.useFakeTimers())
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Share, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Share, ActivityIndicator, Platform } from 'react-native'
 import ViewShot, { ViewShotRef } from 'react-native-view-shot'
 import { getScorecard, ScorecardData } from '../lib/debates'
 import type { NativeStackScreenProps } from '@react-navigation/native-stack'
@@ -46,13 +46,15 @@ export default function ScoringScreen({ route, navigation }: Props) {
     return () => { cancelled = true }
   }, [debateId])
 
+  const shareMessage = `I just debated "${scorecard?.topic?.title}" on Squabble Up! Debate me: squabbleup://debate/${debateId}`
+
   const handleShare = async () => {
     try {
       const uri = await cardRef.current?.capture()
       if (uri) {
         await Share.share({
-          message: `I just debated "${scorecard?.topic?.title}" on Squabble Up! Debate me: squabbleup://debate/${debateId}`,
-          url: uri,
+          message: shareMessage,
+          url: Platform.OS === 'ios' ? uri : undefined,
         })
       }
     } catch {
@@ -80,7 +82,12 @@ export default function ScoringScreen({ route, navigation }: Props) {
     )
   }
 
-  const winner = scorecard.winner_id === scorecard.creator_id ? 'Creator' : 'Opponent'
+  const hasWinner = scorecard.winner_id != null
+  const winnerLabel = !hasWinner
+    ? 'Tie'
+    : scorecard.winner_id === scorecard.creator_id
+      ? 'Creator'
+      : 'Opponent'
 
   return (
     <View style={styles.container}>
@@ -107,15 +114,14 @@ export default function ScoringScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        <Text style={styles.winnerText}>{winner} wins!</Text>
+        <Text style={styles.winnerText}>{hasWinner ? `${winnerLabel} wins!` : 'Draw!'}</Text>
 
         <View style={styles.scoresContainer}>
           {CATEGORIES.map(cat => {
-            const creatorScore = scorecard.ai_scores?.creator[cat] ?? 50
-            const opponentScore = scorecard.ai_scores?.opponent[cat] ?? 50
-            const total = creatorScore + opponentScore || 1
-            const creatorWidth = `${(creatorScore / total) * 100}%` as const
-            const opponentWidth = `${(opponentScore / total) * 100}%` as const
+            const creatorScore = scorecard.ai_scores?.creator[cat] ?? 0
+            const opponentScore = scorecard.ai_scores?.opponent[cat] ?? 0
+            const creatorWidth = `${creatorScore}%` as const
+            const opponentWidth = `${opponentScore}%` as const
             return (
               <View key={cat} style={styles.scoreRow}>
                 <Text style={styles.categoryLabel}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</Text>
@@ -128,8 +134,12 @@ export default function ScoringScreen({ route, navigation }: Props) {
           })}
         </View>
 
+        {scorecard.ai_scores?.reasoning ? (
+          <Text style={styles.reasoning}>"{scorecard.ai_scores.reasoning}"</Text>
+        ) : null}
+
         <Text style={styles.footer}>Debate anything. Fairly scored.</Text>
-        <Text style={styles.url}>squabbleup.app</Text>
+        <Text style={styles.url}>squabbleup://debate/{debateId}</Text>
       </ViewShot>
 
       <View style={styles.actions}>
@@ -147,9 +157,9 @@ export default function ScoringScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgPrimary, padding: 24, justifyContent: 'center', alignItems: 'center' },
   card: { backgroundColor: COLORS.bgSurface, borderRadius: 16, padding: 24, width: '100%', alignItems: 'center' },
-  wordmark: { fontFamily: 'serif', fontSize: 20, fontWeight: '700', color: COLORS.accentAmber, marginBottom: 4 },
+  wordmark: { fontFamily: 'DM Serif Display', fontSize: 20, fontWeight: '700', color: COLORS.accentAmber, marginBottom: 4 },
   tagline: { fontSize: 12, color: COLORS.textMuted, marginBottom: 24 },
-  topicTitle: { fontFamily: 'serif', fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 8 },
+  topicTitle: { fontFamily: 'DM Serif Display', fontSize: 22, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginBottom: 8 },
   date: { fontSize: 12, color: COLORS.textMuted, marginBottom: 16 },
   divider: { width: '100%', height: 1, backgroundColor: COLORS.borderSubtle, marginBottom: 16 },
   participants: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24, marginBottom: 24 },
@@ -157,13 +167,14 @@ const styles = StyleSheet.create({
   participantName: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
   participantSide: { fontSize: 12, color: COLORS.textSecondary, marginTop: 4 },
   vsCircle: { width: 48, height: 48, borderRadius: 24, backgroundColor: COLORS.accentAmber, alignItems: 'center', justifyContent: 'center' },
-  vsText: { fontFamily: 'serif', fontSize: 16, fontWeight: '800', color: COLORS.bgPrimary },
-  winnerText: { fontFamily: 'serif', fontSize: 22, fontWeight: '700', color: COLORS.accentAmber, marginBottom: 24 },
+  vsText: { fontFamily: 'DM Serif Display', fontSize: 16, fontWeight: '800', color: COLORS.bgPrimary },
+  winnerText: { fontFamily: 'DM Serif Display', fontSize: 22, fontWeight: '700', color: COLORS.accentAmber, marginBottom: 24 },
   scoresContainer: { width: '100%', marginBottom: 24 },
   scoreRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   categoryLabel: { width: 100, fontSize: 14, color: COLORS.textSecondary },
   barContainer: { flex: 1, flexDirection: 'row', height: 8, borderRadius: 4, overflow: 'hidden' },
   bar: { height: '100%' },
+  reasoning: { fontSize: 14, color: COLORS.textSecondary, fontStyle: 'italic', textAlign: 'center', marginBottom: 24, lineHeight: 20 },
   footer: { fontSize: 12, color: COLORS.textMuted, fontStyle: 'italic', marginBottom: 4 },
   url: { fontSize: 12, color: COLORS.textSecondary },
   actions: { marginTop: 24, alignItems: 'center', gap: 16 },
