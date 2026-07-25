@@ -76,7 +76,7 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
     }
     init()
     return () => { cancelled = true }
-  }, [debateId, roundNumber, navigation])
+  }, [debateId, roundNumber, side, navigation])
 
   useEffect(() => {
     joinDebateRoom(debateId)
