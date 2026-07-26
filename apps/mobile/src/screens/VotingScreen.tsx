@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native'
-import { getDebate, triggerScoring } from '../lib/debates'
+import { getDebate } from '../lib/debates'
 import { getRoundsByDebate } from '../lib/rounds'
 import { submitVote } from '../lib/votes'
 import type { ScreenProps } from '../lib/types'
@@ -79,8 +79,7 @@ export default function VotingScreen({ route, navigation }: ScreenProps<'Voting'
           // Vote submission is optional — continue to scoring
         }
       }
-      await triggerScoring(debateId)
-      navigation.replace('Scoring', { debateId })
+      navigation.replace('AIScoring', { debateId })
     } catch {
       Alert.alert('Error', 'Could not start scoring.')
     } finally {
