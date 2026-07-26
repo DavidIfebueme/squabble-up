@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { BullModule } from '@nestjs/bullmq'
 import { HttpModule } from '@nestjs/axios'
 import { ScoringService } from './scoring.service'
@@ -10,19 +10,20 @@ import { DebatesModule } from '../debates/debates.module'
 import { UsersModule } from '../users/users.module'
 import { RoundsModule } from '../rounds/rounds.module'
 import { TopicsModule } from '../topics/topics.module'
-
-export const SCORING_QUEUE = 'scoring'
+import { ScoringController } from './scoring.controller'
+import { SCORING_QUEUE } from './scoring.constants'
 
 @Module({
   imports: [
     BullModule.registerQueue({ name: SCORING_QUEUE }),
     HttpModule,
     VotesModule,
-    forwardRef(() => DebatesModule),
+    DebatesModule,
     UsersModule,
     RoundsModule,
     TopicsModule,
   ],
+  controllers: [ScoringController],
   providers: [ScoringService, ScoringProcessor, GeminiService, ContentFilterService],
   exports: [ScoringService],
 })
