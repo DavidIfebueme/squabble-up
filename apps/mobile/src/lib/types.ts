@@ -30,6 +30,9 @@ export type RootStackParamList = {
   Settings: { email?: string } | undefined
   CommunityGuidelines: undefined
   Report: { type?: 'debate' | 'comment' | 'problem'; targetId?: string } | undefined
+  AIScoring: { debateId: string }
+  GuestConversion: { displayName: string; guestSessionId: string }
+  DeepLinkLanding: { url: string }
   BlockUser: { username: string }
 }
 

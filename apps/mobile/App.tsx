@@ -35,6 +35,9 @@ import SettingsScreen from './src/screens/SettingsScreen'
 import CommunityGuidelinesScreen from './src/screens/CommunityGuidelinesScreen'
 import ReportScreen from './src/screens/ReportScreen'
 import BlockUserScreen from './src/screens/BlockUserScreen'
+import AIScoringScreen from './src/screens/AIScoringScreen'
+import GuestConversionScreen from './src/screens/GuestConversionScreen'
+import DeepLinkLandingScreen from './src/screens/DeepLinkLandingScreen'
 import { COLORS } from './src/lib/design'
 import type { RootStackParamList } from './src/lib/types'
 
@@ -138,6 +141,9 @@ export default function App() {
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="CommunityGuidelines" component={CommunityGuidelinesScreen} />
         <Stack.Screen name="Report" component={ReportScreen} />
+        <Stack.Screen name="AIScoring" component={AIScoringScreen} />
+        <Stack.Screen name="GuestConversion" component={GuestConversionScreen} />
+        <Stack.Screen name="DeepLinkLanding" component={DeepLinkLandingScreen} />
         <Stack.Screen name="BlockUser" component={BlockUserScreen} />
       </Stack.Navigator>
     </NavigationContainer>

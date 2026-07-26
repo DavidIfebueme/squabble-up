@@ -10,7 +10,7 @@
     "lint": "eslint \"src/**/*.ts\"",
     "test": "jest --passWithNoTests",
     "typecheck": "tsc --noEmit",
-    "seed": "ts-node src/seed.ts"
+    "seed": "ts-node --transpile-only src/seed.ts"
   },
   "dependencies": {
     "@bull-board/api": "^6.5.1",
