@@ -69,6 +69,26 @@ export class RoundsService {
       speaker_id: userId,
     })
 
+    const debateResult = await this.debatesService.findById(round.debate_id)
+    const debate = debateResult.data
+    if (debate && debate.creator_id && debate.opponent_id) {
+      const roundSubmissions = await this.roundRepo.find({
+        where: { debate_id: round.debate_id, round_number: round.round_number },
+      })
+      const creatorSubmitted = roundSubmissions.some(r => r.speaker_id === debate.creator_id && r.transcription)
+      const opponentSubmitted = roundSubmissions.some(r => r.speaker_id === debate.opponent_id && r.transcription)
+
+      if (creatorSubmitted && opponentSubmitted) {
+        this.realtimeGateway.emitDebateEvent(round.debate_id, 'round-completed', {
+          round_number: round.round_number,
+        })
+
+        if (round.round_number === DEBATE_ROUNDS) {
+          await this.debatesService.complete(round.debate_id)
+        }
+      }
+    }
+
     return { success: true, data: updated }
   }
 }

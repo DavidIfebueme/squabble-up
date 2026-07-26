@@ -9,7 +9,8 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"src/**/*.ts\"",
     "test": "jest --passWithNoTests",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed": "ts-node src/seed.ts"
   },
   "dependencies": {
     "@bull-board/api": "^6.5.1",

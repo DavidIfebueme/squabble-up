@@ -8,14 +8,33 @@ import { useFonts, DMSerifDisplay_400Regular } from '@expo-google-fonts/dm-serif
 import { PublicSans_400Regular, PublicSans_600SemiBold, PublicSans_700Bold } from '@expo-google-fonts/public-sans'
 import HomeScreen from './src/screens/HomeScreen'
 import DebateScreen from './src/screens/DebateScreen'
-import DebateLobbyScreen from './src/screens/DebateLobbyScreen'
-import DebateRoundScreen from './src/screens/DebateRoundScreen'
 import CreateDebateScreen from './src/screens/CreateDebateScreen'
-import ProfileScreen from './src/screens/ProfileScreen'
+import DebateLobbyScreen from './src/screens/DebateLobbyScreen'
+import PreDebateScreen from './src/screens/PreDebateScreen'
+import DebateRoundScreen from './src/screens/DebateRoundScreen'
+import BetweenRoundScreen from './src/screens/BetweenRoundScreen'
 import GuestDebateScreen from './src/screens/GuestDebateScreen'
 import ScoringScreen from './src/screens/ScoringScreen'
+import VerdictScreen from './src/screens/VerdictScreen'
 import VotingScreen from './src/screens/VotingScreen'
 import AuthScreen from './src/screens/AuthScreen'
+import SplashScreen from './src/screens/SplashScreen'
+import OnboardingWelcomeScreen from './src/screens/OnboardingWelcomeScreen'
+import OnboardingInterestsScreen from './src/screens/OnboardingInterestsScreen'
+import OnboardingPersonaScreen from './src/screens/OnboardingPersonaScreen'
+import EmailVerificationScreen from './src/screens/EmailVerificationScreen'
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen'
+import TopicDetailScreen from './src/screens/TopicDetailScreen'
+import SearchTopicsScreen from './src/screens/SearchTopicsScreen'
+import TopicSuggestionScreen from './src/screens/TopicSuggestionScreen'
+import ProfileScreen from './src/screens/ProfileScreen'
+import EditProfileScreen from './src/screens/EditProfileScreen'
+import DebateHistoryScreen from './src/screens/DebateHistoryScreen'
+import NotificationsScreen from './src/screens/NotificationsScreen'
+import SettingsScreen from './src/screens/SettingsScreen'
+import CommunityGuidelinesScreen from './src/screens/CommunityGuidelinesScreen'
+import ReportScreen from './src/screens/ReportScreen'
+import BlockUserScreen from './src/screens/BlockUserScreen'
 import { COLORS } from './src/lib/design'
 import type { RootStackParamList } from './src/lib/types'
 
@@ -91,15 +110,35 @@ export default function App() {
   return (
     <NavigationContainer linking={linking}>
       <StatusBar style="auto" />
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash">
+        <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="OnboardingWelcome" component={OnboardingWelcomeScreen} />
+        <Stack.Screen name="OnboardingInterests" component={OnboardingInterestsScreen} />
+        <Stack.Screen name="OnboardingPersona" component={OnboardingPersonaScreen} />
+        <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="EmailVerification" component={EmailVerificationScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="Main" component={HomeTabs} />
+        <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="CreateDebate" component={CreateDebateScreen} />
         <Stack.Screen name="DebateLobby" component={DebateLobbyScreen} />
+        <Stack.Screen name="PreDebate" component={PreDebateScreen} />
         <Stack.Screen name="DebateRound" component={DebateRoundScreen} />
+        <Stack.Screen name="BetweenRound" component={BetweenRoundScreen} />
         <Stack.Screen name="GuestDebate" component={GuestDebateScreen} />
         <Stack.Screen name="Scoring" component={ScoringScreen} />
+        <Stack.Screen name="Verdict" component={VerdictScreen} />
         <Stack.Screen name="Voting" component={VotingScreen} />
-        <Stack.Screen name="Auth" component={AuthScreen} />
+        <Stack.Screen name="TopicDetail" component={TopicDetailScreen} />
+        <Stack.Screen name="SearchTopics" component={SearchTopicsScreen} />
+        <Stack.Screen name="TopicSuggestion" component={TopicSuggestionScreen} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="DebateHistory" component={DebateHistoryScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="CommunityGuidelines" component={CommunityGuidelinesScreen} />
+        <Stack.Screen name="Report" component={ReportScreen} />
+        <Stack.Screen name="BlockUser" component={BlockUserScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   )

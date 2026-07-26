@@ -36,8 +36,10 @@ export class DebatesService implements OnModuleInit {
     }
   }
 
-  async findAll(status?: string, page = 1, limit = 20) {
-    const where: Record<string, string> = status ? { status } : {}
+  async findAll(status?: string, topicId?: string, page = 1, limit = 20) {
+    const where: Record<string, string> = {}
+    if (status) where.status = status
+    if (topicId) where.topic_id = topicId
     const [data, total] = await this.debateRepo.findAndCount({
       where,
       skip: (page - 1) * limit,
