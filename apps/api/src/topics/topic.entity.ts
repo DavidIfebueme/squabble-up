@@ -17,7 +17,7 @@ export class Topic {
   @Column()
   category: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'uuid', nullable: true })
   created_by: string | null
 
   @Column({ default: 0 })
