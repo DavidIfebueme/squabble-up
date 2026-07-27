@@ -15,14 +15,14 @@ export class Vote {
   @Column({ type: 'varchar', length: 20 })
   vote_type: 'creator' | 'opponent'
 
-  @Column({ type: 'decimal', precision: 3, scale: 1 })
-  logic_score: number
+  @Column({ type: 'decimal', precision: 3, scale: 1, nullable: true })
+  logic_score: number | null
 
-  @Column({ type: 'decimal', precision: 3, scale: 1 })
-  evidence_score: number
+  @Column({ type: 'decimal', precision: 3, scale: 1, nullable: true })
+  evidence_score: number | null
 
-  @Column({ type: 'decimal', precision: 3, scale: 1 })
-  delivery_score: number
+  @Column({ type: 'decimal', precision: 3, scale: 1, nullable: true })
+  delivery_score: number | null
 
   @CreateDateColumn()
   created_at: Date

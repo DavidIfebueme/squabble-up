@@ -30,6 +30,7 @@ export class VotesService {
 
     const scores = { creator: 0, opponent: 0 }
     for (const v of votes) {
+      if (v.logic_score == null || v.evidence_score == null || v.delivery_score == null) continue
       const avg = (v.logic_score + v.evidence_score + v.delivery_score) / 3
       if (v.vote_type === 'creator') scores.creator += avg
       else scores.opponent += avg

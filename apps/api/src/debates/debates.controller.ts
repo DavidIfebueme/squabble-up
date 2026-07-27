@@ -14,13 +14,14 @@ export class DebatesController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'List debates with optional status filter' })
+  @ApiOperation({ summary: 'List debates with optional filters' })
   @ApiQuery({ name: 'status', required: false, description: 'Filter by status' })
+  @ApiQuery({ name: 'topic_id', required: false, description: 'Filter by topic UUID' })
   @ApiQuery({ name: 'page', required: false, description: 'Page number' })
   @ApiQuery({ name: 'limit', required: false, description: 'Items per page' })
   @ApiResponse({ status: 200, description: 'Paginated list of debates' })
-  async list(@Query('status') status?: string, @Query('page') page = 1, @Query('limit') limit = 20) {
-    return this.debatesService.findAll(status, +page, +limit)
+  async list(@Query('status') status?: string, @Query('topic_id') topicId?: string, @Query('page') page = 1, @Query('limit') limit = 20) {
+    return this.debatesService.findAll(status, topicId, +page, +limit)
   }
 
   @Get('open')

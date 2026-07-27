@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native'
-import { getDebate, triggerScoring } from '../lib/debates'
+import { getDebate } from '../lib/debates'
 import { getRoundsByDebate } from '../lib/rounds'
 import { submitVote } from '../lib/votes'
 import type { ScreenProps } from '../lib/types'
+import { COLORS } from '../lib/design'
 
 interface Debate {
   id: string
@@ -15,19 +16,6 @@ interface Round {
   id: string
   round_number: number
   transcription: string | null
-}
-
-const COLORS = {
-  bgPrimary: '#1E1E1E',
-  bgSurface: '#2A2A2A',
-  bgElevated: '#333333',
-  accentAmber: '#D4953A',
-  recordRed: '#E53935',
-  textPrimary: '#F5F0E8',
-  textSecondary: '#A0998F',
-  textMuted: '#6B6560',
-  borderSubtle: '#3A3A3A',
-  successGreen: '#66BB6A',
 }
 
 const ROUND_NAMES = ['Opening', 'Rebuttal', 'Closing']
@@ -71,16 +59,12 @@ export default function VotingScreen({ route, navigation }: ScreenProps<'Voting'
           await submitVote({
             debate_id: debateId,
             vote_type: selectedWinner,
-            logic_score: 5,
-            evidence_score: 5,
-            delivery_score: 5,
           })
         } catch {
           // Vote submission is optional — continue to scoring
         }
       }
-      await triggerScoring(debateId)
-      navigation.replace('Scoring', { debateId })
+      navigation.replace('AIScoring', { debateId })
     } catch {
       Alert.alert('Error', 'Could not start scoring.')
     } finally {

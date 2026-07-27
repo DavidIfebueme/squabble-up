@@ -4,9 +4,9 @@ import type { Vote } from './types'
 export async function submitVote(data: {
   debate_id: string
   vote_type: 'creator' | 'opponent'
-  logic_score: number
-  evidence_score: number
-  delivery_score: number
+  logic_score?: number
+  evidence_score?: number
+  delivery_score?: number
 }) {
   const { data: response } = await api.post('/votes', data)
   return response

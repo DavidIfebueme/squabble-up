@@ -1,6 +1,11 @@
 import api from './api'
 import type { Debate, DebateScores, PaginatedResponse, Topic } from '@squabble-up/shared'
 
+export async function getDebates(params?: { status?: string; topic_id?: string; page?: number; limit?: number }) {
+  const { data } = await api.get<PaginatedResponse<Debate>>('/debates', { params })
+  return data
+}
+
 export async function getOpenDebates(params?: { page?: number; limit?: number }) {
   const { data } = await api.get<PaginatedResponse<Debate>>('/debates/open', { params })
   return data

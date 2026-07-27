@@ -111,7 +111,7 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
       setReconnectRemaining(Math.ceil(remaining / 1000))
     })
     const cleanup6 = onDebateEvent('debate-completed', () => {
-      navigation.replace('Scoring', { debateId })
+      navigation.replace('Voting', { debateId })
     })
     const cleanup7 = onDebateEvent('debate-abandoned', () => {
       Alert.alert('Debate Abandoned', 'Your opponent did not reconnect in time. You win by default.', [
@@ -121,6 +121,11 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
     const cleanup8 = onDebateEvent('user-left', () => {
       setOpponentDisconnected(true)
       setReconnectRemaining(120)
+    })
+    const cleanup9 = onDebateEvent('round-completed', (data) => {
+      if (data.payload?.round_number === roundNumber) {
+        navigation.replace('BetweenRound', { debateId, roundNumber, side })
+      }
     })
 
     return () => {
@@ -132,8 +137,9 @@ export default function DebateRoundScreen({ route, navigation }: Props) {
       cleanup6()
       cleanup7()
       cleanup8()
+      cleanup9()
     }
-  }, [debateId, roundNumber, navigation, opponentId])
+  }, [debateId, roundNumber, navigation, opponentId, side])
 
   const handleRecordComplete = useCallback(async ({ transcription, duration: recordedDuration }: { transcription: string; duration: number }) => {
     if (!roundId) {

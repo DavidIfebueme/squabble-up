@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, IsNull, Not } from 'typeorm'
 import { Round } from './round.entity'
 import { DebatesService } from '../debates/debates.service'
 import { RealtimeGateway } from '../realtime/realtime.gateway'
@@ -67,6 +67,24 @@ export class RoundsService {
     this.realtimeGateway.emitDebateEvent(round.debate_id, 'round-submitted', {
       round_number: round.round_number,
       speaker_id: userId,
+    })
+
+    await this.roundRepo.manager.transaction(async (manager) => {
+      const submissions = await manager.find(Round, {
+        where: { debate_id: round.debate_id, round_number: round.round_number },
+        lock: { mode: 'pessimistic_write' },
+      })
+      const bothSubmitted = submissions.length === 2 && submissions.every(r => r.transcription)
+
+      if (bothSubmitted) {
+        this.realtimeGateway.emitDebateEvent(round.debate_id, 'round-completed', {
+          round_number: round.round_number,
+        })
+
+        if (round.round_number === DEBATE_ROUNDS) {
+          await this.debatesService.complete(round.debate_id)
+        }
+      }
     })
 
     return { success: true, data: updated }

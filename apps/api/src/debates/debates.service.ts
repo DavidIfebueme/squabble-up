@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException, OnModuleInit } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, IsNull, Not } from 'typeorm'
 import { v4 as uuid } from 'uuid'
 import { Debate } from './debate.entity'
 import { GuestSession } from './guest-session.entity'
@@ -36,34 +36,43 @@ export class DebatesService implements OnModuleInit {
     }
   }
 
-  async findAll(status?: string, page = 1, limit = 20) {
-    const where: Record<string, string> = status ? { status } : {}
+  private clampPagination(page: number, limit: number) {
+    return { page: Math.max(1, page), limit: Math.min(Math.max(1, limit), 100) }
+  }
+
+  async findAll(status?: string, topicId?: string, page = 1, limit = 20) {
+    const { page: p, limit: l } = this.clampPagination(page, limit)
+    const where: Record<string, string> = {}
+    if (status) where.status = status
+    if (topicId) where.topic_id = topicId
     const [data, total] = await this.debateRepo.findAndCount({
       where,
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (p - 1) * l,
+      take: l,
       order: { created_at: 'DESC' },
     })
-    return { success: true, data, page, limit, total, has_more: page * limit < total }
+    return { success: true, data, page: p, limit: l, total, has_more: p * l < total }
   }
 
   async findOpen(page = 1, limit = 20) {
+    const { page: p, limit: l } = this.clampPagination(page, limit)
     const [data, total] = await this.debateRepo.findAndCount({
       where: { status: 'pending' as const },
       select: ['id', 'topic_id', 'status', 'created_at'],
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (p - 1) * l,
+      take: l,
       order: { created_at: 'DESC' },
     })
-    return { success: true, data, page, limit, total, has_more: page * limit < total }
+    return { success: true, data, page: p, limit: l, total, has_more: p * l < total }
   }
 
   async findMy(userId: string, page = 1, limit = 20) {
+    const { page: p, limit: l } = this.clampPagination(page, limit)
     const qb = this.debateRepo.createQueryBuilder('debate')
       .where('debate.creator_id = :userId OR debate.opponent_id = :userId', { userId })
       .orderBy('debate.created_at', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit)
+      .skip((p - 1) * l)
+      .take(l)
 
     const [data, total] = await qb.getManyAndCount()
     return { success: true, data, page, limit, total, has_more: page * limit < total }
@@ -105,31 +114,42 @@ export class DebatesService implements OnModuleInit {
       if (debate.creator_id === userId || debate.opponent_id === userId) {
         throw new BadRequestException('Already a participant in this debate')
       }
-      if (!debate.creator_id) debate.creator_id = userId
-      else if (!debate.opponent_id) debate.opponent_id = userId
-      else throw new BadRequestException('Debate is full')
-    } else {
-      if (debate.creator_id && debate.opponent_id) {
-        throw new BadRequestException('Debate is full')
+      const result = await this.debateRepo.update(
+        { id: debateId, status: 'pending', opponent_id: IsNull() },
+        { opponent_id: userId },
+      )
+      if (result.affected === 0) {
+        const result2 = await this.debateRepo.update(
+          { id: debateId, status: 'pending', creator_id: IsNull() },
+          { creator_id: userId },
+        )
+        if (result2.affected === 0) {
+          throw new BadRequestException('Debate is full')
+        }
       }
-      const role = !debate.creator_id ? 'creator' : 'opponent'
-      if (role === 'creator') debate.creator_id = `guest_${uuid()}`
-      else debate.opponent_id = `guest_${uuid()}`
-      const session = await this.createGuestSession(debateId, role)
-      await this.debateRepo.save(debate)
+      const updated = await this.debateRepo.findOneBy({ id: debateId })
       this.clearAbandonTimer(debateId)
-      return { success: true, data: { debate, guest_session: session } }
+      return { success: true, data: { debate: updated! } }
     }
 
-    await this.debateRepo.save(debate)
+    if (debate.creator_id && debate.opponent_id) {
+      throw new BadRequestException('Debate is full')
+    }
+    const role = !debate.creator_id ? 'creator' : 'opponent'
+    const guestId = `guest_${uuid()}`
+    const result = role === 'creator'
+      ? await this.debateRepo.update({ id: debateId, creator_id: IsNull() }, { creator_id: guestId })
+      : await this.debateRepo.update({ id: debateId, opponent_id: IsNull() }, { opponent_id: guestId })
+    if (result.affected === 0) throw new BadRequestException('Slot taken')
+    const updated = await this.debateRepo.findOneBy({ id: debateId })
+    const session = await this.createGuestSession(debateId, role)
     this.clearAbandonTimer(debateId)
-    return { success: true, data: { debate } }
+    return { success: true, data: { debate: updated!, guest_session: session } }
   }
 
   async start(debateId: string, userId: string) {
     const debate = await this.debateRepo.findOneBy({ id: debateId })
     if (!debate) throw new NotFoundException('Debate not found')
-    if (debate.status !== 'pending') throw new BadRequestException('Debate is not in pending state')
     if (debate.creator_id !== userId && debate.opponent_id !== userId) {
       throw new ForbiddenException('Only participants can start a debate')
     }
@@ -137,26 +157,37 @@ export class DebatesService implements OnModuleInit {
       throw new BadRequestException('Both participants required to start')
     }
     this.clearAbandonTimer(debateId)
-    debate.status = 'active'
-    await this.debateRepo.save(debate)
-    return { success: true, data: debate }
+    const result = await this.debateRepo.update(
+      { id: debateId, status: 'pending' },
+      { status: 'active' },
+    )
+    if (result.affected === 0) throw new BadRequestException('Debate is not in pending state')
+    return { success: true, data: await this.debateRepo.findOneBy({ id: debateId }) }
   }
 
   async complete(debateId: string, userId?: string) {
     const debate = await this.debateRepo.findOneBy({ id: debateId })
     if (!debate) throw new NotFoundException('Debate not found')
-    if (debate.status !== 'active') throw new BadRequestException('Debate is not active')
     if (userId && debate.creator_id !== userId && debate.opponent_id !== userId) {
       throw new ForbiddenException('Only participants can complete a debate')
     }
-    debate.status = 'completed'
-    debate.completed_at = new Date()
-    await this.debateRepo.save(debate)
+    const result = await this.debateRepo.update(
+      { id: debateId, status: 'active' },
+      { status: 'completed' as const, completed_at: new Date() },
+    )
+    if (result.affected === 0) {
+      const check = await this.debateRepo.findOneBy({ id: debateId })
+      if (check?.status === 'completed') {
+        return { success: true, data: check }
+      }
+      throw new BadRequestException('Debate is not active')
+    }
+    const updated = await this.debateRepo.findOneBy({ id: debateId })
     this.realtimeGateway.emitDebateEvent(debateId, 'debate-completed', {
       debate_id: debateId,
-      winner_id: debate.winner_id,
+      winner_id: updated!.winner_id,
     })
-    return { success: true, data: debate }
+    return { success: true, data: updated }
   }
 
   async abandon(debateId: string, userId: string) {

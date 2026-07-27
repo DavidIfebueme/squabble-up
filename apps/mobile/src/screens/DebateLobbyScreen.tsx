@@ -87,7 +87,7 @@ export default function DebateLobbyScreen({ route, navigation }: Props) {
     if (!opponentJoined || timedOut) return
     if (pollRef.current) clearInterval(pollRef.current)
     if (countdown <= 0) {
-      navigation.replace('DebateRound', { debateId, roundNumber: 1, side })
+      navigation.replace('PreDebate', { debateId, side })
       return
     }
     const timer = setTimeout(() => setCountdown(countdown - 1), 1000)
