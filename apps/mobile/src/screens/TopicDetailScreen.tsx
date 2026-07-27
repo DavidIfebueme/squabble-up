@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Share } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Share } from 'react-native'
+import { CaretLeft, ShareNetwork } from 'phosphor-react-native'
 import type { Topic, Debate } from '@squabble-up/shared'
 import { getTopicByIdentifier } from '../lib/topics'
 import { getDebates } from '../lib/debates'
@@ -71,11 +72,11 @@ export default function TopicDetailScreen({ route, navigation }: ScreenProps<'To
     <View style={styles.container}>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
+          <CaretLeft color={COLORS.textPrimary} size={24} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle} numberOfLines={1}>{topic.title}</Text>
         <TouchableOpacity onPress={handleShare}>
-          <Text style={styles.shareIcon}>⇧</Text>
+          <ShareNetwork color={COLORS.textPrimary} size={22} />
         </TouchableOpacity>
       </View>
 
@@ -91,14 +92,6 @@ export default function TopicDetailScreen({ route, navigation }: ScreenProps<'To
             <View style={styles.statPill}>
               <Text style={styles.statValue}>{topic.debate_count}</Text>
               <Text style={styles.statLabel}>debates</Text>
-            </View>
-            <View style={styles.statPill}>
-              <Text style={styles.statValue}>{Math.floor(Math.random() * 2000)}</Text>
-              <Text style={styles.statLabel}>votes</Text>
-            </View>
-            <View style={styles.statPill}>
-              <Text style={styles.statValue}>68%</Text>
-              <Text style={styles.statLabel}>FOR wins</Text>
             </View>
           </View>
         </View>
@@ -133,9 +126,7 @@ export default function TopicDetailScreen({ route, navigation }: ScreenProps<'To
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgPrimary },
   topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: COLORS.bgElevated, paddingHorizontal: 16, paddingTop: 48, paddingBottom: 12, height: 56 },
-  backArrow: { fontSize: 24, color: COLORS.textPrimary },
   topBarTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: COLORS.textPrimary, textAlign: 'center', marginHorizontal: 16 },
-  shareIcon: { fontSize: 22, color: COLORS.textPrimary, transform: [{ rotate: '-45deg' }] },
   content: { flex: 1 },
   contentInner: { padding: 24, paddingBottom: 48 },
   hero: { backgroundColor: COLORS.bgSurface, borderRadius: 16, padding: 24, marginBottom: 24 },

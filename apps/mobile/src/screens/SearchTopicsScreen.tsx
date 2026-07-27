@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native'
+import { CaretLeft } from 'phosphor-react-native'
 import type { Topic } from '@squabble-up/shared'
 import { getTopics } from '../lib/topics'
 import type { ScreenProps } from '../lib/types'
@@ -118,7 +119,7 @@ export default function SearchTopicsScreen({ navigation }: ScreenProps<'SearchTo
     <View style={styles.container}>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
+          <CaretLeft color={COLORS.textPrimary} size={24} />
         </TouchableOpacity>
         <TextInput
           style={styles.searchInput}
@@ -195,7 +196,6 @@ const styles = StyleSheet.create({
     height: 56,
     gap: 12,
   },
-  backArrow: { fontSize: 24, color: COLORS.textPrimary },
   searchInput: {
     flex: 1,
     backgroundColor: COLORS.bgSurface,
@@ -204,6 +204,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 12,
     fontSize: 16,
+    fontFamily: 'Public Sans',
   },
   recentSection: { paddingTop: 12 },
   recentHeader: {
@@ -213,8 +214,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 8,
   },
-  recentTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
-  clearText: { fontSize: 14, color: COLORS.accentAmber, fontWeight: '600' },
+  recentTitle: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, fontFamily: 'Public Sans' },
+  clearText: { fontSize: 14, color: COLORS.accentAmber, fontWeight: '600', fontFamily: 'Public Sans' },
   recentList: { paddingHorizontal: 16, gap: 8 },
   recentChip: {
     backgroundColor: COLORS.bgSurface,
@@ -223,7 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 8,
   },
-  recentChipText: { color: COLORS.textPrimary, fontSize: 14 },
+  recentChipText: { color: COLORS.textPrimary, fontSize: 14, fontFamily: 'Public Sans' },
   listContent: { padding: 16 },
   resultRow: {
     backgroundColor: COLORS.bgSurface,
@@ -243,9 +244,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
   },
-  categoryText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase' },
-  topicTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary },
-  debateCount: { fontSize: 12, color: COLORS.textMuted },
+  categoryText: { fontSize: 12, fontWeight: '700', color: COLORS.textSecondary, textTransform: 'uppercase', fontFamily: 'Public Sans' },
+  topicTitle: { fontSize: 16, fontWeight: '700', color: COLORS.textPrimary, fontFamily: 'Public Sans' },
+  debateCount: { fontSize: 12, color: COLORS.textMuted, fontFamily: 'Public Sans' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   emptyState: { alignItems: 'center', marginTop: 64 },
   emptyTitle: { fontFamily: 'DM Serif Display', fontSize: 22, color: COLORS.textPrimary, textAlign: 'center', marginBottom: 16 },

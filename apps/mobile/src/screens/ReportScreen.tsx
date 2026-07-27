@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native'
+import { CaretLeft } from 'phosphor-react-native'
 import type { ScreenProps } from '../lib/types'
 import { COLORS } from '../lib/design'
 
@@ -28,7 +29,7 @@ export default function ReportScreen({ navigation }: ScreenProps<'Report'>) {
     <View style={styles.container}>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
+          <CaretLeft color={COLORS.textPrimary} size={24} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Report</Text>
         <View style={styles.spacer} />
@@ -91,7 +92,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     height: 56,
   },
-  backArrow: { fontSize: 24, color: COLORS.textPrimary },
   topBarTitle: { flex: 1, fontFamily: 'DM Serif Display', fontSize: 20, color: COLORS.textPrimary, textAlign: 'center' },
   spacer: { width: 24 },
   content: { flex: 1, padding: 16 },
@@ -119,15 +119,16 @@ const styles = StyleSheet.create({
   },
   radioSelected: { borderColor: COLORS.accentAmber },
   radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.accentAmber },
-  reasonText: { fontSize: 16, color: COLORS.textPrimary },
+  reasonText: { fontSize: 16, color: COLORS.textPrimary, fontFamily: 'Public Sans' },
   reasonTextSelected: { fontWeight: '700', color: COLORS.textPrimary },
-  label: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, marginTop: 16, marginBottom: 8 },
+  label: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary, marginTop: 16, marginBottom: 8, fontFamily: 'Public Sans' },
   input: {
     backgroundColor: COLORS.bgSurface,
     color: COLORS.textPrimary,
     padding: 16,
     borderRadius: 12,
     fontSize: 16,
+    fontFamily: 'Public Sans',
     minHeight: 120,
   },
   textArea: { paddingTop: 16 },
@@ -141,5 +142,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   submitButtonDisabled: { opacity: 0.5 },
-  submitButtonText: { color: COLORS.bgPrimary, fontWeight: '700', fontSize: 16 },
+  submitButtonText: { color: COLORS.bgPrimary, fontWeight: '700', fontSize: 16, fontFamily: 'Public Sans' },
 })

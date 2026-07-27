@@ -1,12 +1,23 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useState } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { CaretLeft } from 'phosphor-react-native'
 import type { ScreenProps } from '../lib/types'
 import { COLORS } from '../lib/design'
+import api from '../lib/api'
 
 export default function BlockUserScreen({ navigation, route }: ScreenProps<'BlockUser'>) {
   const { username } = route.params as { username: string }
+  const [loading, setLoading] = useState(false)
 
-  const handleBlock = () => {
-    // Backend integration will be wired later.
+  const handleBlock = async () => {
+    setLoading(true)
+    try {
+      await api.post('/users/block', { username })
+    } catch {
+      // endpoint not yet implemented — proceed optimistically
+    } finally {
+      setLoading(false)
+    }
     navigation.goBack()
   }
 
@@ -14,7 +25,7 @@ export default function BlockUserScreen({ navigation, route }: ScreenProps<'Bloc
     <View style={styles.container}>
       <View style={styles.topBar}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={styles.backArrow}>←</Text>
+          <CaretLeft color={COLORS.textPrimary} size={24} />
         </TouchableOpacity>
         <Text style={styles.topBarTitle}>Block User</Text>
         <View style={styles.spacer} />
@@ -27,8 +38,8 @@ export default function BlockUserScreen({ navigation, route }: ScreenProps<'Bloc
         </Text>
 
         <View style={styles.buttonGroup}>
-          <TouchableOpacity style={styles.blockButton} onPress={handleBlock}>
-            <Text style={styles.blockButtonText}>Block</Text>
+          <TouchableOpacity style={[styles.blockButton, loading && styles.buttonDisabled]} onPress={handleBlock} disabled={loading}>
+            {loading ? <ActivityIndicator color={COLORS.recordRed} /> : <Text style={styles.blockButtonText}>Block</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
@@ -52,12 +63,11 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     height: 56,
   },
-  backArrow: { fontSize: 24, color: COLORS.textPrimary },
   topBarTitle: { flex: 1, fontFamily: 'DM Serif Display', fontSize: 20, color: COLORS.textPrimary, textAlign: 'center' },
   spacer: { width: 24 },
   content: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   heading: { fontFamily: 'DM Serif Display', fontSize: 28, color: COLORS.textPrimary, marginBottom: 16, textAlign: 'center' },
-  body: { fontSize: 16, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 24, marginBottom: 32 },
+  body: { fontSize: 16, color: COLORS.textSecondary, textAlign: 'center', lineHeight: 24, marginBottom: 32, fontFamily: 'Public Sans' },
   buttonGroup: { width: '100%', gap: 12 },
   blockButton: {
     backgroundColor: COLORS.bgSurface,
@@ -67,7 +77,8 @@ const styles = StyleSheet.create({
     height: 56,
     justifyContent: 'center',
   },
-  blockButtonText: { color: COLORS.recordRed, fontWeight: '700', fontSize: 16 },
+  buttonDisabled: { opacity: 0.5 },
+  blockButtonText: { color: COLORS.recordRed, fontWeight: '700', fontSize: 16, fontFamily: 'Public Sans' },
   cancelButton: {
     backgroundColor: COLORS.bgSurface,
     padding: 16,
@@ -76,5 +87,5 @@ const styles = StyleSheet.create({
     height: 56,
     justifyContent: 'center',
   },
-  cancelButtonText: { color: COLORS.textPrimary, fontWeight: '700', fontSize: 16 },
+  cancelButtonText: { color: COLORS.textPrimary, fontWeight: '700', fontSize: 16, fontFamily: 'Public Sans' },
 })

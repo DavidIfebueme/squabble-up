@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native'
-import { CaretLeft } from 'phosphor-react-native'
+import { CaretRight } from 'phosphor-react-native'
 import * as SecureStore from 'expo-secure-store'
 import type { ScreenProps } from '../lib/types'
 import { COLORS } from '../lib/design'
@@ -132,7 +132,7 @@ export default function SettingsScreen({ navigation, route }: Props) {
                   {row.value ? (
                     <Text style={styles.rowValue}>{row.value}</Text>
                   ) : (
-                    <CaretLeft color={row.danger ? COLORS.recordRed : COLORS.textMuted} size={20} style={styles.chevron} />
+                    <CaretRight color={row.danger ? COLORS.recordRed : COLORS.textMuted} size={20} />
                   )}
                 </TouchableOpacity>
               ))}
@@ -193,7 +193,6 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 16, color: COLORS.textPrimary },
   rowValue: { fontSize: 14, color: COLORS.textMuted },
   dangerText: { color: COLORS.recordRed },
-  chevron: { transform: [{ rotate: '180deg' }] },
   logoutButton: {
     borderWidth: 1,
     borderColor: COLORS.accentAmber,

@@ -3,12 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator
 import { getScorecard, ScorecardData } from '../lib/debates'
 import type { ScreenProps } from '../lib/types'
 import { COLORS } from '../lib/design'
+import api from '../lib/api'
 
 const CATEGORIES = ['logic', 'persuasiveness', 'evidence', 'delivery'] as const
 
 export default function VerdictScreen({ route, navigation }: ScreenProps<'Verdict'>) {
   const { debateId } = route.params
   const [scorecard, setScorecard] = useState<ScorecardData | null>(null)
+  const [creatorName, setCreatorName] = useState('Creator')
+  const [opponentName, setOpponentName] = useState('Opponent')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const scaleAnim = useRef(new Animated.Value(0.8)).current
@@ -20,6 +23,19 @@ export default function VerdictScreen({ route, navigation }: ScreenProps<'Verdic
         const result = await getScorecard(debateId)
         if (!cancelled && result.success) {
           setScorecard(result.data)
+          const sc = result.data
+          if (sc.creator_id) {
+            try {
+              const userRes = await api.get(`/users/${sc.creator_id}`)
+              if (!cancelled && userRes.data?.display_name) setCreatorName(userRes.data.display_name)
+            } catch { /* fallback to 'Creator' */ }
+          }
+          if (sc.opponent_id) {
+            try {
+              const userRes = await api.get(`/users/${sc.opponent_id}`)
+              if (!cancelled && userRes.data?.display_name) setOpponentName(userRes.data.display_name)
+            } catch { /* fallback to 'Opponent' */ }
+          }
         }
       } catch {
         if (!cancelled) setError('Could not load verdict.')
@@ -73,7 +89,7 @@ export default function VerdictScreen({ route, navigation }: ScreenProps<'Verdic
 
   const isTie = creatorScore === opponentScore
   const isCreatorWinner = scorecard.winner_id === scorecard.creator_id
-  const winnerName = isCreatorWinner ? 'Creator' : 'Opponent'
+  const winnerName = isCreatorWinner ? creatorName : opponentName
   const winnerScore = isCreatorWinner ? creatorScore : opponentScore
   const loserScore = isCreatorWinner ? opponentScore : creatorScore
   const winnerLabel = isTie ? 'Too close to call' : winnerName
@@ -91,14 +107,14 @@ export default function VerdictScreen({ route, navigation }: ScreenProps<'Verdic
 
       <View style={styles.participants}>
         <View style={[styles.participantCard, isCreatorWinner && styles.winnerCard]}>
-          <Text style={styles.participantName}>Creator</Text>
+          <Text style={styles.participantName}>{creatorName}</Text>
           <Text style={styles.participantSide}>FOR</Text>
           <Text style={styles.participantScore}>{Math.round(creatorScore)}</Text>
           {isCreatorWinner && <Text style={styles.winnerBadge}>WINNER</Text>}
         </View>
 
         <View style={[styles.participantCard, !isCreatorWinner && !isTie && styles.winnerCard]}>
-          <Text style={styles.participantName}>Opponent</Text>
+          <Text style={styles.participantName}>{opponentName}</Text>
           <Text style={styles.participantSide}>AGAINST</Text>
           <Text style={styles.participantScore}>{Math.round(opponentScore)}</Text>
           {!isCreatorWinner && !isTie && <Text style={styles.winnerBadge}>WINNER</Text>}
@@ -132,7 +148,7 @@ export default function VerdictScreen({ route, navigation }: ScreenProps<'Verdic
       <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
         <Text style={styles.shareButtonText}>Share Score Card</Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => navigation.replace('Scoring', { debateId })}>
+      <TouchableOpacity onPress={() => navigation.replace('AIScoring', { debateId })}>
         <Text style={styles.viewFullText}>View Full Score Card</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('Main')}>

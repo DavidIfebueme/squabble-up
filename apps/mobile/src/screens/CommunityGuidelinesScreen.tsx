@@ -1,16 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native'
 import { CaretLeft } from 'phosphor-react-native'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import type { RootStackParamList } from '../lib/types'
+import type { ScreenProps } from '../lib/types'
 import { COLORS } from '../lib/design'
 
-type LocalStackParamList = RootStackParamList & {
-  CommunityGuidelines: undefined
-}
-
-type Props = NativeStackScreenProps<LocalStackParamList, 'CommunityGuidelines'>
-
-export default function CommunityGuidelinesScreen({ navigation }: Props) {
+export default function CommunityGuidelinesScreen({ navigation }: ScreenProps<'CommunityGuidelines'>) {
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
@@ -102,10 +95,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.accentAmber,
     marginBottom: 8,
+    fontFamily: 'Public Sans',
   },
   sectionBody: {
     fontSize: 15,
     lineHeight: 24,
     color: COLORS.textSecondary,
+    fontFamily: 'Public Sans',
   },
 })

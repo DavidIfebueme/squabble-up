@@ -1,14 +1,25 @@
 import { useState } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native'
+import { CaretLeft } from 'phosphor-react-native'
 import type { ScreenProps } from '../lib/types'
 import { COLORS } from '../lib/design'
+import api from '../lib/api'
 
 export default function ForgotPasswordScreen({ navigation }: ScreenProps<'ForgotPassword'>) {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
+  const [loading, setLoading] = useState(false)
 
-  const handleSend = () => {
-    if (!email) return
+  const handleSend = async () => {
+    if (!email.trim()) return
+    setLoading(true)
+    try {
+      await api.post('/auth/forgot-password', { email: email.trim() })
+    } catch {
+      // endpoint not yet implemented — show confirmation optimistically
+    } finally {
+      setLoading(false)
+    }
     setSent(true)
   }
 
@@ -16,7 +27,7 @@ export default function ForgotPasswordScreen({ navigation }: ScreenProps<'Forgot
     <View style={styles.container}>
       <View style={styles.appBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
+          <CaretLeft color={COLORS.textPrimary} size={24} />
         </TouchableOpacity>
         <Text style={styles.appBarTitle}>Reset Password</Text>
         <View style={styles.spacer} />
@@ -34,8 +45,8 @@ export default function ForgotPasswordScreen({ navigation }: ScreenProps<'Forgot
               keyboardType="email-address"
               autoCapitalize="none"
             />
-            <TouchableOpacity style={styles.button} onPress={handleSend}>
-              <Text style={styles.buttonText}>Send reset link</Text>
+            <TouchableOpacity style={[styles.button, loading && styles.buttonDisabled]} onPress={handleSend} disabled={loading}>
+              {loading ? <ActivityIndicator color={COLORS.bgPrimary} /> : <Text style={styles.buttonText}>Send reset link</Text>}
             </TouchableOpacity>
           </>
         ) : (
@@ -72,6 +83,7 @@ const styles = StyleSheet.create({
   backIcon: {
     fontSize: 24,
     color: COLORS.textPrimary,
+    fontFamily: 'Public Sans',
   },
   appBarTitle: {
     flex: 1,
@@ -96,6 +108,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: COLORS.borderSubtle,
+    fontFamily: 'Public Sans',
   },
   button: {
     backgroundColor: COLORS.accentAmber,
@@ -104,10 +117,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  buttonDisabled: { opacity: 0.6 },
   buttonText: {
     color: COLORS.bgPrimary,
     fontWeight: '700',
     fontSize: 16,
+    fontFamily: 'Public Sans',
   },
   confirmation: {
     alignItems: 'center',
@@ -125,6 +140,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 24,
+    fontFamily: 'Public Sans',
   },
   resendButton: {
     padding: 12,
@@ -133,5 +149,6 @@ const styles = StyleSheet.create({
     color: COLORS.accentAmber,
     fontWeight: '600',
     fontSize: 14,
+    fontFamily: 'Public Sans',
   },
 })

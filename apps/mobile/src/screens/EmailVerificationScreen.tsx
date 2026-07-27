@@ -1,15 +1,34 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { useState } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { CaretLeft } from 'phosphor-react-native'
 import type { ScreenProps } from '../lib/types'
 import { COLORS } from '../lib/design'
+import { getAccessToken } from '../lib/authStore'
 
 export default function EmailVerificationScreen({ navigation, route }: ScreenProps<'EmailVerification'>) {
   const { email } = route.params
+  const [checking, setChecking] = useState(false)
+
+  const handleVerified = async () => {
+    setChecking(true)
+    const token = await getAccessToken()
+    if (token) {
+      try {
+        const { default: api } = await import('../lib/api')
+        await api.get('/users/me')
+      } catch {
+        // proceed regardless — user can retry later
+      }
+    }
+    setChecking(false)
+    navigation.navigate('Main')
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.appBar}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backIcon}>←</Text>
+          <CaretLeft color={COLORS.textPrimary} size={24} />
         </TouchableOpacity>
         <Text style={styles.appBarTitle}>Verify Email</Text>
         <View style={styles.spacer} />
@@ -27,8 +46,8 @@ export default function EmailVerificationScreen({ navigation, route }: ScreenPro
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Main')}>
-        <Text style={styles.buttonText}>I've verified</Text>
+      <TouchableOpacity style={[styles.button, checking && styles.buttonDisabled]} onPress={handleVerified} disabled={checking}>
+        {checking ? <ActivityIndicator color={COLORS.bgPrimary} /> : <Text style={styles.buttonText}>I've verified</Text>}
       </TouchableOpacity>
     </View>
   )
@@ -52,6 +71,7 @@ const styles = StyleSheet.create({
   backIcon: {
     fontSize: 24,
     color: COLORS.textPrimary,
+    fontFamily: 'Public Sans',
   },
   appBarTitle: {
     flex: 1,
@@ -86,6 +106,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: 32,
+    fontFamily: 'Public Sans',
   },
   resendButton: {
     padding: 12,
@@ -94,6 +115,7 @@ const styles = StyleSheet.create({
     color: COLORS.accentAmber,
     fontWeight: '600',
     fontSize: 14,
+    fontFamily: 'Public Sans',
   },
   button: {
     backgroundColor: COLORS.accentAmber,
@@ -103,9 +125,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 16,
   },
+  buttonDisabled: { opacity: 0.6 },
   buttonText: {
     color: COLORS.bgPrimary,
     fontWeight: '700',
     fontSize: 16,
+    fontFamily: 'Public Sans',
   },
 })

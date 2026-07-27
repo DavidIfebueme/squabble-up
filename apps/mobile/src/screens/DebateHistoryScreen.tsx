@@ -2,15 +2,10 @@ import { useState, useEffect } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { CaretLeft } from 'phosphor-react-native'
 import { getUserHistory } from '../lib/users'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
-import type { RootStackParamList } from '../lib/types'
+import type { ScreenProps } from '../lib/types'
 import { COLORS } from '../lib/design'
 
-type LocalStackParamList = RootStackParamList & {
-  DebateHistory: { userId: string }
-}
-
-type Props = NativeStackScreenProps<LocalStackParamList, 'DebateHistory'>
+type Props = ScreenProps<'DebateHistory'>
 
 type FilterOption = 'all' | 'won' | 'lost' | 'tied'
 
