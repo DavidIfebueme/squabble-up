@@ -14,7 +14,7 @@ export class Round {
   @Column()
   speaker_id: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   audio_url: string | null
 
   @Column({ type: 'text', nullable: true })

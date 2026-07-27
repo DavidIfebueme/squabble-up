@@ -8,16 +8,16 @@ export class User {
   @Column({ unique: true })
   email: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   password_hash: string | null
 
   @Column()
   display_name: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   avatar_url: string | null
 
-  @Column({ type: 'int', default: null, nullable: true })
+  @Column({ type: 'int', default: 0, nullable: true })
   elo_score: number | null
 
   @Column({ default: false })
