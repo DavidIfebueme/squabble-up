@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { getAccessToken } from './authStore'
+import { getAccessToken, setAccessToken } from './authStore'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1'
 
@@ -8,6 +8,12 @@ const api = axios.create({
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 })
+
+let onAuthExpired: (() => void) | null = null
+
+export function setOnAuthExpired(cb: () => void) {
+  onAuthExpired = cb
+}
 
 api.interceptors.request.use(async (config) => {
   const token = await getAccessToken()
@@ -21,7 +27,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.warn('Auth required, redirecting...')
+      setAccessToken(null)
+      onAuthExpired?.()
     }
     return Promise.reject(error)
   },

@@ -1,21 +1,9 @@
 import { useState } from 'react'
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native'
-import * as SecureStore from 'expo-secure-store'
 import type { ScreenProps } from '../lib/types'
 import api from '../lib/api'
-
-const COLORS = {
-  bgPrimary: '#1E1E1E',
-  bgSurface: '#2A2A2A',
-  bgElevated: '#333333',
-  accentAmber: '#D4953A',
-  textPrimary: '#F5F0E8',
-  textSecondary: '#A0998F',
-  textMuted: '#6B6560',
-  borderSubtle: '#3A3A3A',
-  successGreen: '#66BB6A',
-  recordRed: '#E53935',
-}
+import { setAccessToken } from '../lib/authStore'
+import { COLORS } from '../lib/design'
 
 export default function GuestConversionScreen({ navigation, route }: ScreenProps<'GuestConversion'>) {
   const { displayName, guestSessionId } = route.params
@@ -54,7 +42,7 @@ export default function GuestConversionScreen({ navigation, route }: ScreenProps
       })
       const data = res.data
       if (data.token) {
-        await SecureStore.setItemAsync('access_token', data.token)
+        await setAccessToken(data.token)
       }
       navigation.reset({ index: 0, routes: [{ name: 'Main' }] })
     } catch (err: unknown) {

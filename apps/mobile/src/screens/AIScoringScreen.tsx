@@ -2,19 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import type { ScreenProps } from '../lib/types'
 import { triggerScoring } from '../lib/debates'
-
-const COLORS = {
-  bgPrimary: '#1E1E1E',
-  bgSurface: '#2A2A2A',
-  bgElevated: '#333333',
-  accentAmber: '#D4953A',
-  textPrimary: '#F5F0E8',
-  textSecondary: '#A0998F',
-  textMuted: '#6B6560',
-  borderSubtle: '#3A3A3A',
-  successGreen: '#66BB6A',
-  recordRed: '#E53935',
-}
+import { COLORS } from '../lib/design'
 
 const STEPS = [
   { key: 'transcribing', label: 'Transcribing arguments...' },
@@ -34,6 +22,18 @@ export default function AIScoringScreen({ navigation, route }: ScreenProps<'AISc
   const [retryCount, setRetryCount] = useState(0)
   const [countdown, setCountdown] = useState(30)
   const mountedRef = useRef(true)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const retryCountRef = useRef(0)
+
+  useEffect(() => {
+    startAnimation()
+    const timer = setTimeout(() => callScoringApi(), STEPS.length * STEP_DELAY + 500)
+    return () => {
+      mountedRef.current = false
+      clearTimeout(timer)
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [])
 
   const startAnimation = () => {
     setError(null)
@@ -67,22 +67,30 @@ export default function AIScoringScreen({ navigation, route }: ScreenProps<'AISc
         setError('flagged')
         return
       }
-      if (retryCount === 0) {
+      const currentRetryCount = retryCountRef.current
+      if (currentRetryCount === 0) {
         setError('retrying')
+        retryCountRef.current = 1
         setRetryCount(1)
         let count = 30
-        const interval = setInterval(() => {
+        intervalRef.current = setInterval(() => {
+          if (!mountedRef.current) {
+            if (intervalRef.current) clearInterval(intervalRef.current)
+            return
+          }
           count--
           setCountdown(count)
           if (count <= 0) {
-            clearInterval(interval)
+            if (intervalRef.current) clearInterval(intervalRef.current)
+            intervalRef.current = null
             callScoringApi()
           }
         }, 1000)
         return
       }
-      if (retryCount === 1) {
+      if (currentRetryCount === 1) {
         setError('manual')
+        retryCountRef.current = 2
         setRetryCount(2)
         return
       }
@@ -90,14 +98,10 @@ export default function AIScoringScreen({ navigation, route }: ScreenProps<'AISc
     }
   }
 
-  useEffect(() => {
-    startAnimation()
-    const timer = setTimeout(() => callScoringApi(), STEPS.length * STEP_DELAY + 500)
-    return () => {
-      mountedRef.current = false
-      clearTimeout(timer)
-    }
-  }, [])
+  const handleCancel = () => {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    navigation.goBack()
+  }
 
   if (error === 'flagged') {
     return (
@@ -118,6 +122,13 @@ export default function AIScoringScreen({ navigation, route }: ScreenProps<'AISc
 
   return (
     <View style={styles.container}>
+      {!error && (
+        <View style={styles.topBar}>
+          <TouchableOpacity onPress={handleCancel}>
+            <Text style={styles.cancelButton}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <View style={styles.center}>
         {error === 'failed' ? (
           <>
@@ -154,9 +165,14 @@ export default function AIScoringScreen({ navigation, route }: ScreenProps<'AISc
               })}
             </View>
             {error === 'manual' && (
-              <TouchableOpacity style={styles.primaryButton} onPress={callScoringApi}>
-                <Text style={styles.primaryButtonText}>Retry</Text>
-              </TouchableOpacity>
+              <View style={styles.manualActions}>
+                <TouchableOpacity style={styles.primaryButton} onPress={callScoringApi}>
+                  <Text style={styles.primaryButtonText}>Retry</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.textButton} onPress={() => navigation.navigate('Main')}>
+                  <Text style={styles.textButtonText}>Skip to Home</Text>
+                </TouchableOpacity>
+              </View>
             )}
           </>
         )}
@@ -167,6 +183,8 @@ export default function AIScoringScreen({ navigation, route }: ScreenProps<'AISc
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.bgPrimary },
+  topBar: { paddingTop: 48, paddingHorizontal: 16, alignItems: 'flex-end' },
+  cancelButton: { fontSize: 14, color: COLORS.textSecondary, fontFamily: 'Public Sans' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   spinner: {
     width: 64,
@@ -196,4 +214,7 @@ const styles = StyleSheet.create({
   flaggedDesc: { fontSize: 14, color: COLORS.textSecondary, textAlign: 'center', marginBottom: 24, fontFamily: 'Public Sans' },
   primaryButton: { backgroundColor: COLORS.accentAmber, paddingVertical: 14, paddingHorizontal: 32, borderRadius: 12 },
   primaryButtonText: { fontSize: 16, fontWeight: '700', color: COLORS.bgPrimary, fontFamily: 'Public Sans' },
+  manualActions: { gap: 12, alignItems: 'center' },
+  textButton: { paddingVertical: 8 },
+  textButtonText: { fontSize: 14, color: COLORS.textSecondary, fontFamily: 'Public Sans' },
 })

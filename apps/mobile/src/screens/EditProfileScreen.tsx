@@ -14,19 +14,7 @@ import {
 import { CaretLeft } from 'phosphor-react-native'
 import { updateProfile } from '../lib/users'
 import type { ScreenProps } from '../lib/types'
-
-const COLORS = {
-  bgPrimary: '#1E1E1E',
-  bgSurface: '#2A2A2A',
-  bgElevated: '#333333',
-  accentAmber: '#D4953A',
-  textPrimary: '#F5F0E8',
-  textSecondary: '#A0998F',
-  textMuted: '#6B6560',
-  borderSubtle: '#3A3A3A',
-  successGreen: '#66BB6A',
-  recordRed: '#E53935',
-}
+import { COLORS } from '../lib/design'
 
 export default function EditProfileScreen({ navigation, route }: ScreenProps<'EditProfile'>) {
   const user = route.params?.user

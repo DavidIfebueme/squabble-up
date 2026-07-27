@@ -1,4 +1,5 @@
 import 'dotenv/config'
+// @ts-expect-error – no pg types needed for seed script
 import { Pool } from 'pg'
 import { v4 as uuid } from 'uuid'
 

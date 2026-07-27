@@ -4,18 +4,7 @@ import type { Topic, Debate } from '@squabble-up/shared'
 import { getTopicByIdentifier } from '../lib/topics'
 import { getDebates } from '../lib/debates'
 import type { ScreenProps } from '../lib/types'
-
-const COLORS = {
-  bgPrimary: '#1E1E1E',
-  bgSurface: '#2A2A2A',
-  bgElevated: '#333333',
-  accentAmber: '#D4953A',
-  textPrimary: '#F5F0E8',
-  textSecondary: '#A0998F',
-  textMuted: '#6B6560',
-  borderSubtle: '#3A3A3A',
-  successGreen: '#66BB6A',
-}
+import { COLORS } from '../lib/design'
 
 export default function TopicDetailScreen({ route, navigation }: ScreenProps<'TopicDetail'>) {
   const { slug } = route.params
@@ -129,7 +118,7 @@ export default function TopicDetailScreen({ route, navigation }: ScreenProps<'To
             <TouchableOpacity
               key={debate.id}
               style={styles.debateCard}
-              onPress={() => navigation.navigate('Scoring', { debateId: debate.id })}
+              onPress={() => navigation.navigate('Verdict', { debateId: debate.id })}
             >
               <Text style={styles.debateCardStatus}>{debate.status.toUpperCase()}</Text>
               <Text style={styles.debateCardDate}>{debate.completed_at ? new Date(debate.completed_at).toLocaleDateString() : 'In progress'}</Text>

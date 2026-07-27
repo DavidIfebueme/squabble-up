@@ -11,7 +11,7 @@ import { Server, Socket } from 'socket.io'
 const RECONNECT_WINDOW_MS = 2 * 60 * 1000
 const COUNTDOWN_TICK_MS = 1000
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway({ cors: { origin: process.env.CORS_ORIGIN?.split(',') ?? '*' } })
 export class RealtimeGateway implements OnGatewayDisconnect {
   @WebSocketServer()
   server: Server

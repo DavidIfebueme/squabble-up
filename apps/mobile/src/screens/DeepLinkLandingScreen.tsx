@@ -2,13 +2,7 @@ import { useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
 import type { ScreenProps } from '../lib/types'
 import api from '../lib/api'
-
-const COLORS = {
-  bgPrimary: '#1E1E1E',
-  accentAmber: '#D4953A',
-  textPrimary: '#F5F0E8',
-  textSecondary: '#A0998F',
-}
+import { COLORS } from '../lib/design'
 
 export default function DeepLinkLandingScreen({ navigation, route }: ScreenProps<'DeepLinkLanding'>) {
   const { url } = route.params

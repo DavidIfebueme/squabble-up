@@ -39,6 +39,7 @@ import AIScoringScreen from './src/screens/AIScoringScreen'
 import GuestConversionScreen from './src/screens/GuestConversionScreen'
 import DeepLinkLandingScreen from './src/screens/DeepLinkLandingScreen'
 import { COLORS } from './src/lib/design'
+import { setOnAuthExpired } from './src/lib/api'
 import type { RootStackParamList } from './src/lib/types'
 
 const Tab = createBottomTabNavigator()
@@ -52,7 +53,7 @@ const linking = {
   config: {
     screens: {
       DebateLobby: 'debate/:debateId',
-      Scoring: 'debate/:debateId/results',
+      AIScoring: 'debate/:debateId/results',
       DebateRound: 'debate/:debateId/round/:roundNumber',
     },
   },
@@ -111,7 +112,16 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer
+      linking={linking}
+      ref={(ref) => {
+        if (ref) {
+          setOnAuthExpired(() => {
+            ref.reset({ index: 0, routes: [{ name: 'Auth' }] })
+          })
+        }
+      }}
+    >
       <StatusBar style="auto" />
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Splash">
         <Stack.Screen name="Splash" component={SplashScreen} />
@@ -122,7 +132,6 @@ export default function App() {
         <Stack.Screen name="EmailVerification" component={EmailVerificationScreen} />
         <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="Main" component={HomeTabs} />
-        <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="CreateDebate" component={CreateDebateScreen} />
         <Stack.Screen name="DebateLobby" component={DebateLobbyScreen} />
         <Stack.Screen name="PreDebate" component={PreDebateScreen} />

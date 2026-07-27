@@ -4,16 +4,7 @@ import { getRoundsByDebate } from '../lib/rounds'
 import { getDebate } from '../lib/debates'
 import { ROUND_NUMBER_TO_TYPE, ROUND_DURATIONS } from '@squabble-up/shared'
 import type { ScreenProps } from '../lib/types'
-
-const COLORS = {
-  bgPrimary: '#1E1E1E',
-  bgSurface: '#2A2A2A',
-  accentAmber: '#D4953A',
-  textPrimary: '#F5F0E8',
-  textSecondary: '#A0998F',
-  textMuted: '#6B6560',
-  successGreen: '#66BB6A',
-}
+import { COLORS } from '../lib/design'
 
 export default function BetweenRoundScreen({ route, navigation }: ScreenProps<'BetweenRound'>) {
   const { debateId, roundNumber, side } = route.params
