@@ -14,7 +14,7 @@ export class Comment {
   @Column({ type: 'text' })
   content: string
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   deleted_at: Date | null
 
   @CreateDateColumn()

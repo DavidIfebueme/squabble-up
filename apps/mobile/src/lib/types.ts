@@ -5,14 +5,35 @@ export type RootStackParamList = {
   Debates: undefined
   Profile: undefined
   Main: undefined
-  CreateDebate: { guestName?: string } | undefined
+  Splash: undefined
+  OnboardingWelcome: undefined
+  OnboardingInterests: undefined
+  OnboardingPersona: { interests?: string[] } | undefined
+  Auth: { displayName?: string } | undefined
+  EmailVerification: { email: string }
+  ForgotPassword: undefined
+  CreateDebate: { guestName?: string; preselectedTopicId?: string } | undefined
   DebateLobby: { debateId: string; side?: string }
+  PreDebate: { debateId: string; side: 'creator' | 'opponent' }
   DebateRound: { debateId: string; roundNumber: number; side: 'creator' | 'opponent' }
+  BetweenRound: { debateId: string; roundNumber: number; side: 'creator' | 'opponent' }
   GuestDebate: undefined
   Scoring: { debateId: string }
+  Verdict: { debateId: string }
   Voting: { debateId: string }
   TopicDetail: { slug: string }
-  Auth: undefined
+  SearchTopics: undefined
+  TopicSuggestion: { query?: string } | undefined
+  EditProfile: { user?: { display_name?: string; email?: string; avatar_url?: string | null } } | undefined
+  DebateHistory: { userId: string }
+  Notifications: undefined
+  Settings: { email?: string } | undefined
+  CommunityGuidelines: undefined
+  Report: { type?: 'debate' | 'comment' | 'problem'; targetId?: string } | undefined
+  AIScoring: { debateId: string }
+  GuestConversion: { displayName: string; guestSessionId: string }
+  DeepLinkLanding: { url: string }
+  BlockUser: { username: string }
 }
 
 export type ScreenProps<T extends keyof RootStackParamList> = NativeStackScreenProps<RootStackParamList, T>

@@ -20,8 +20,9 @@ type Side = 'creator' | 'opponent'
 
 const STEPS = ['Topic', 'Settings', 'Lobby'] as const
 
-export default function CreateDebateScreen({ navigation }: ScreenProps<'CreateDebate'>) {
-  const [step, setStep] = useState(0)
+export default function CreateDebateScreen({ route, navigation }: ScreenProps<'CreateDebate'>) {
+  const { guestName, preselectedTopicId } = route.params ?? {}
+  const [step, setStep] = useState(preselectedTopicId ? 1 : 0)
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null)
   const [query, setQuery] = useState('')
   const [topics, setTopics] = useState<Topic[]>([])
@@ -30,10 +31,16 @@ export default function CreateDebateScreen({ navigation }: ScreenProps<'CreateDe
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
-    getTopics({ limit: 20 }).then(result => {
-      if (result.success && result.data) setTopics(result.data)
+    getTopics({ limit: 50 }).then(result => {
+      if (result.success && result.data) {
+        setTopics(result.data)
+        if (preselectedTopicId) {
+          const preselected = result.data.find(t => t.id === preselectedTopicId)
+          if (preselected) setSelectedTopic(preselected)
+        }
+      }
     })
-  }, [])
+  }, [preselectedTopicId])
 
   const filtered = query
     ? topics.filter(t => t.title.toLowerCase().includes(query.toLowerCase()))

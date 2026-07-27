@@ -1,6 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq'
 import { Job } from 'bullmq'
-import { SCORING_QUEUE } from './scoring.module'
+import { SCORING_QUEUE } from './scoring.constants'
 import { VotesService } from '../votes/votes.service'
 import { DebatesService } from '../debates/debates.service'
 import { UsersService } from '../users/users.service'

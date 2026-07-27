@@ -346,7 +346,7 @@ describe('DebatesService', () => {
     it('returns paginated debates', async () => {
       debateRepo.findAndCount.mockResolvedValue([[createMockDebate()], 1])
 
-      const result = await service.findAll(undefined, 1, 20)
+      const result = await service.findAll(undefined, undefined, 1, 20)
 
       expect(result.success).toBe(true)
       expect(result.data).toHaveLength(1)
@@ -356,7 +356,7 @@ describe('DebatesService', () => {
     it('filters by status', async () => {
       debateRepo.findAndCount.mockResolvedValue([[createMockDebate()], 1])
 
-      await service.findAll('pending', 1, 20)
+      await service.findAll('pending', undefined, 1, 20)
 
       expect(debateRepo.findAndCount).toHaveBeenCalledWith(
         expect.objectContaining({ where: { status: 'pending' } })
